@@ -31,6 +31,7 @@ function MyDues() {
 
   useEffect(() => {
     loadDues();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear]);
 
   const toggleStatusFilter = (status) => {
@@ -226,7 +227,7 @@ function MyDues() {
       };
     } else if (daysUntilDue <= 15 && daysUntilDue > 0) {
       return {
-        text: `Próxima cuota (${daysUntilDue} días)`,
+        text: `Próximo vencimiento (${daysUntilDue} días)`,
         className: "status-due-soon",
         icon: "🟡",
       };
