@@ -1,0 +1,252 @@
+.payments-page {
+  animation: fadeIn 0.5s ease;
+}
+
+.payments-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+}
+
+.payments-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Payment Form */
+.payment-form-container {
+  background: var(--color-chrome);
+  border: 2px solid var(--color-steel);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-chrome);
+}
+
+.payment-form h3 {
+  margin: 0 0 1.5rem 0;
+  color: var(--color-spark);
+  font-size: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  color: var(--color-fog);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.file-name {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-spark);
+}
+
+/* Messages */
+.message {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  animation: slideDown 0.3s ease;
+}
+
+.message-success {
+  background: rgba(46, 213, 115, 0.1);
+  border: 1px solid rgba(46, 213, 115, 0.3);
+  color: #2ed573;
+}
+
+.message-error {
+  background: rgba(232, 220, 197, 0.1);
+  border: 1px solid rgba(232, 220, 197, 0.3);
+  color: var(--color-spark);
+}
+
+/* No Results */
+.no-results {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--color-exhaust);
+}
+
+.no-results p {
+  margin-bottom: 1.5rem;
+}
+
+/* Payments List */
+.payments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.payment-card {
+  background: var(--color-chrome);
+  border: 2px solid var(--color-steel);
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.payment-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--color-spark);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.3s ease;
+}
+
+.payment-card:hover {
+  border-color: var(--color-spark);
+  transform: translateX(8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(232, 220, 197, 0.1);
+}
+
+.payment-card:hover::before {
+  transform: scaleY(1);
+}
+
+.payment-header-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.payment-month {
+  font-size: 1.5rem;
+  margin: 0 0 0.25rem 0;
+  color: var(--color-white);
+}
+
+.payment-date {
+  font-size: 0.875rem;
+  color: var(--color-exhaust);
+  margin: 0;
+}
+
+.payment-type-badge {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.payment-type-badge.cuota_mensual {
+  background: rgba(46, 204, 113, 0.1);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.payment-type-badge.pago_adelantado {
+  background: rgba(52, 152, 219, 0.1);
+  color: #3498db;
+  border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+.payment-type-badge.otro_concepto {
+  background: rgba(149, 165, 166, 0.1);
+  color: #95a5a6;
+  border: 1px solid rgba(149, 165, 166, 0.3);
+}
+
+.payment-amount {
+  font-size: 2rem;
+  font-family: var(--font-display);
+  color: var(--color-spark);
+  letter-spacing: 2px;
+}
+
+.payment-comment {
+  color: var(--color-fog);
+  font-size: 0.875rem;
+  margin: 0 0 1rem 0;
+  padding: 0.75rem;
+  background: var(--color-steel);
+  border-left: 3px solid var(--color-spark);
+}
+
+.payment-voucher-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-spark);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.payment-voucher-link:hover {
+  color: var(--color-flame);
+  transform: translateX(4px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .payments-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .payments-header .btn {
+    width: 100%;
+  }
+
+  .payment-form-container {
+    padding: 1.5rem;
+  }
+
+  .payment-header-card {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .payment-amount {
+    font-size: 1.75rem;
+  }
+
+  .page-title {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-form-container {
+    padding: 1.25rem;
+  }
+
+  .payment-card {
+    padding: 1.25rem;
+  }
+
+  .payment-month {
+    font-size: 1.25rem;
+  }
+
+  .payment-amount {
+    font-size: 1.5rem;
+  }
+}

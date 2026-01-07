@@ -1,0 +1,329 @@
+.all-payments-page {
+  animation: fadeIn 0.5s ease;
+}
+
+.all-payments-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+}
+
+.all-payments-header {
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+/* Filters */
+.filters-bar {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-group label {
+  font-size: 0.75rem;
+  color: var(--color-exhaust);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+
+.filter-group select {
+  min-width: 150px;
+}
+
+/* Payments Grid - Year View */
+.payments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.payment-status-card {
+  background: var(--color-chrome);
+  border: 2px solid var(--color-steel);
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.payment-status-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(232, 220, 197, 0.1);
+}
+
+.member-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.member-name-card {
+  font-size: 1.25rem;
+  margin: 0 0 0.25rem 0;
+  color: var(--color-white);
+}
+
+.member-email-card {
+  font-size: 0.813rem;
+  color: var(--color-exhaust);
+  margin: 0;
+}
+
+.payment-stats {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.stat-number {
+  font-size: 1.5rem;
+  font-family: var(--font-display);
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.stat-money {
+  font-size: 1.25rem;
+}
+
+.stat-label-small {
+  font-size: 0.688rem;
+  color: var(--color-exhaust);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Month Indicators */
+.month-indicators {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+}
+
+.month-indicator {
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.688rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border: 2px solid var(--color-steel);
+  transition: all 0.3s ease;
+  cursor: help;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+}
+
+.month-indicator.status-paid {
+  background: rgba(46, 204, 113, 0.2);
+  border-color: #2ecc71;
+  color: #2ecc71;
+  font-size: 1.125rem;
+}
+
+.month-indicator.status-overdue {
+  background: rgba(231, 76, 60, 0.2);
+  border-color: #e74c3c;
+  color: #e74c3c;
+  font-size: 1.125rem;
+}
+
+.month-indicator.status-due-soon {
+  background: rgba(243, 156, 18, 0.2);
+  border-color: #f39c12;
+  color: #f39c12;
+  font-size: 1.125rem;
+}
+
+.month-indicator.status-pending {
+  background: var(--color-steel);
+  border-color: var(--color-exhaust);
+  color: var(--color-fog);
+  opacity: 0.7;
+}
+
+.month-indicator.status-paid:hover {
+  background: rgba(46, 204, 113, 0.3);
+  transform: scale(1.05);
+}
+
+.month-indicator.status-overdue:hover {
+  background: rgba(231, 76, 60, 0.3);
+  transform: scale(1.05);
+}
+
+.month-indicator.status-due-soon:hover {
+  background: rgba(243, 156, 18, 0.3);
+  transform: scale(1.05);
+}
+
+.month-indicator.status-pending:hover {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+/* Month View */
+.payments-list-simple {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.month-summary {
+  background: var(--color-chrome);
+  border: 2px solid var(--color-steel);
+  padding: 2rem;
+  text-align: center;
+}
+
+.month-summary h2 {
+  margin: 0 0 0.5rem 0;
+  color: var(--color-primary);
+}
+
+.month-summary p {
+  margin: 0;
+  color: var(--color-fog);
+  font-size: 1rem;
+}
+
+.members-simple-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.member-simple-card {
+  background: var(--color-chrome);
+  border: 2px solid var(--color-steel);
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.member-simple-card:hover {
+  transform: translateX(4px);
+}
+
+.member-simple-card.paid {
+  border-left: 4px solid var(--color-primary);
+}
+
+.member-simple-card.paid:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.member-simple-card.unpaid {
+  border-left: 4px solid var(--color-exhaust);
+  opacity: 0.7;
+}
+
+.status-indicator {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.member-simple-card.paid .status-indicator {
+  background: rgba(232, 220, 197, 0.2);
+  color: var(--color-primary);
+}
+
+.member-simple-card.unpaid .status-indicator {
+  background: var(--color-steel);
+  color: var(--color-exhaust);
+}
+
+.member-simple-info {
+  flex: 1;
+}
+
+.member-simple-info h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+  color: var(--color-white);
+}
+
+.status-text {
+  font-size: 0.813rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.member-simple-card.paid .status-text {
+  color: var(--color-primary);
+}
+
+.member-simple-card.unpaid .status-text {
+  color: var(--color-exhaust);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .payments-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .month-indicators {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .members-simple-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filters-bar {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .filter-group select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-stats {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-end;
+  }
+
+  .month-indicators {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .month-indicator {
+    font-size: 0.625rem;
+    padding: 0.4rem;
+  }
+}
