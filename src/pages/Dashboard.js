@@ -116,7 +116,7 @@ function Dashboard() {
 
       <div className="stats-grid">
         <div className="stat-card fade-in" style={{ animationDelay: "0.2s" }}>
-          <div className="stat-icon">📋</div>
+          <div className="stat-icon">💸</div>
           <div className="stat-content">
             <h3 className="stat-value">{stats.myOverdueDues}</h3>
             <p className="stat-label">Cuotas Vencidas</p>
