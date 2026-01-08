@@ -44,7 +44,7 @@ function Layout() {
       <nav className={`nav ${menuOpen ? "nav-open" : ""}`}>
         <NavLink to="/" className="nav-link" onClick={closeMenu}>
           <span className="nav-icon">🏍️</span>
-          Dashboard
+          Inicio
         </NavLink>
         <NavLink to="/my-dues" className="nav-link" onClick={closeMenu}>
           <span className="nav-icon">📋</span>

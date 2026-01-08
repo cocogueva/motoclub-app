@@ -115,17 +115,6 @@ function Dashboard() {
       </div>
 
       <div className="stats-grid">
-        <div className="stat-card fade-in" style={{ animationDelay: "0.1s" }}>
-          <div className="stat-icon">👥</div>
-          <div className="stat-content">
-            <h3 className="stat-value">{stats.totalMembers}</h3>
-            <p className="stat-label">Total Miembros</p>
-          </div>
-          <button className="stat-link" onClick={() => navigate("/members")}>
-            Ver todos →
-          </button>
-        </div>
-
         <div className="stat-card fade-in" style={{ animationDelay: "0.2s" }}>
           <div className="stat-icon">📋</div>
           <div className="stat-content">
@@ -142,7 +131,7 @@ function Dashboard() {
             )}
           </div>
           <button className="stat-link" onClick={() => navigate("/my-dues")}>
-            Ver cuotas →
+            <b>Pagar cuotas →</b>
           </button>
         </div>
 
@@ -158,7 +147,18 @@ function Dashboard() {
             className="stat-link"
             onClick={() => navigate("/all-payments")}
           >
-            Ver historial →
+            <b>Ver historial →</b>
+          </button>
+        </div>
+
+        <div className="stat-card fade-in" style={{ animationDelay: "0.1s" }}>
+          <div className="stat-icon">👥</div>
+          <div className="stat-content">
+            <h3 className="stat-value">{stats.totalMembers}</h3>
+            <p className="stat-label">Total Miembros</p>
+          </div>
+          <button className="stat-link" onClick={() => navigate("/members")}>
+            <b>Ver todos →</b>
           </button>
         </div>
       </div>
@@ -170,12 +170,12 @@ function Dashboard() {
         <h2 className="section-title">Acciones Rápidas</h2>
         <div className="actions-grid">
           <button className="action-card" onClick={() => navigate("/payments")}>
-            <span className="action-icon">📸</span>
-            <span className="action-label">Subir Comprobante</span>
+            <span className="action-icon">🧾</span>
+            <span className="action-label">Mis Pagos</span>
           </button>
 
           <button className="action-card" onClick={() => navigate("/members")}>
-            <span className="action-icon">🔍</span>
+            <span className="action-icon">☠️</span>
             <span className="action-label">Ver Miembros</span>
           </button>
 
