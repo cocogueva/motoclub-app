@@ -27,6 +27,7 @@ function AllPayments() {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear]);
 
   const loadData = async () => {
@@ -145,15 +146,28 @@ function AllPayments() {
 
   const getTotalPaidByMember = (memberEmail) => {
     const memberPayments = getMemberPayments(memberEmail);
-    return memberPayments.reduce((sum, p) => sum + (p.monto || 0), 0);
+    // Only sum cuota_mensual payments
+    return memberPayments.reduce((sum, p) => {
+      const isCuota =
+        p.payment_type === "cuota_mensual" ||
+        (p.applies_to_month && p.applies_to_year);
+      return isCuota ? sum + (p.monto || 0) : sum;
+    }, 0);
   };
 
   const filteredMembers = members.map((member) => {
     const memberPayments = getMemberPayments(member.email);
     const totalPaid = getTotalPaidByMember(member.email);
 
+    // Only count cuota payments
+    const cuotaPayments = memberPayments.filter(
+      (p) =>
+        p.payment_type === "cuota_mensual" ||
+        (p.applies_to_month && p.applies_to_year)
+    );
+
     if (selectedMonth === "all") {
-      return { ...member, totalPaid, paymentsCount: memberPayments.length };
+      return { ...member, totalPaid, paymentsCount: cuotaPayments.length };
     } else {
       const paidThisMonth = hasPaidMonth(member.email, selectedMonth);
       return { ...member, totalPaid, paidThisMonth };
