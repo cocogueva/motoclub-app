@@ -27,7 +27,7 @@ function Layout() {
                 e.target.style.display = "none";
               }}
             />
-            <h1 className="logo">H616</h1>
+            <h1 className="logo">H616 MC</h1>
           </div>
           <button
             className="menu-toggle"

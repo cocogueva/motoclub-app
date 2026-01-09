@@ -115,7 +115,11 @@ function Dashboard() {
       </div>
 
       <div className="stats-grid">
-        <div className="stat-card fade-in" style={{ animationDelay: "0.2s" }}>
+        <div
+          className="stat-card fade-in"
+          style={{ animationDelay: "0.2s" }}
+          onClick={() => navigate("/my-dues")}
+        >
           <div className="stat-icon">💸</div>
           <div className="stat-content">
             <h3 className="stat-value">{stats.myOverdueDues}</h3>
@@ -130,12 +134,18 @@ function Dashboard() {
               </p>
             )}
           </div>
-          <button className="stat-link" onClick={() => navigate("/my-dues")}>
-            <b>Pagar cuotas →</b>
+          <button className="stat-link">
+            <b>
+              Pago de cuotas <br></br> Listado de cuotas
+            </b>
           </button>
         </div>
 
-        <div className="stat-card fade-in" style={{ animationDelay: "0.3s" }}>
+        <div
+          className="stat-card fade-in"
+          style={{ animationDelay: "0.3s" }}
+          onClick={() => navigate("/all-payments")}
+        >
           <div className="stat-icon">📊</div>
           <div className="stat-content">
             <h3 className="stat-value">
@@ -143,22 +153,23 @@ function Dashboard() {
             </h3>
             <p className="stat-label">Cuotas Recaudadas</p>
           </div>
-          <button
-            className="stat-link"
-            onClick={() => navigate("/all-payments")}
-          >
-            <b>Ver historial →</b>
+          <button className="stat-link">
+            <b>Historial de recaudación</b>
           </button>
         </div>
 
-        <div className="stat-card fade-in" style={{ animationDelay: "0.1s" }}>
+        <div
+          className="stat-card fade-in"
+          style={{ animationDelay: "0.1s" }}
+          onClick={() => navigate("/members")}
+        >
           <div className="stat-icon">👥</div>
           <div className="stat-content">
             <h3 className="stat-value">{stats.totalMembers}</h3>
             <p className="stat-label">Total Miembros</p>
           </div>
-          <button className="stat-link" onClick={() => navigate("/members")}>
-            <b>Ver todos →</b>
+          <button className="stat-link">
+            <b>Ver lista</b>
           </button>
         </div>
       </div>

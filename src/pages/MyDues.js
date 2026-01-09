@@ -359,6 +359,7 @@ function MyDues() {
                   id="voucher"
                   type="file"
                   accept="image/*"
+                  capture="environment"
                   onChange={handleFileChange}
                   required
                 />

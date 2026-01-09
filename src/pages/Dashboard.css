@@ -123,10 +123,10 @@
   letter-spacing: 1px;
 }
 
-.stat-link:hover {
+/* .stat-link:hover {
   color: var(--color-spark);
   transform: translateX(4px);
-}
+} */
 
 /* Dashboard Actions */
 .dashboard-actions {

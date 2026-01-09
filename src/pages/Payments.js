@@ -205,6 +205,7 @@ function Payments() {
                 id="voucher"
                 type="file"
                 accept="image/*"
+                capture="environment"
                 onChange={handleFileChange}
                 required
               />
