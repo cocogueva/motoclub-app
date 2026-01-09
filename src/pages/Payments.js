@@ -9,7 +9,7 @@ function Payments() {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     monto: "100",
-    concepto_pago: "",
+    concepto_pago: "Otro pago",
     comentario: "",
     payment_type: "otro_concepto",
   });
@@ -109,7 +109,7 @@ function Payments() {
       setMessage("¡Pago registrado exitosamente!");
       setFormData({
         monto: "100",
-        concepto_pago: "",
+        concepto_pago: "Otro pago",
         comentario: "",
         payment_type: "otro_concepto",
       });
@@ -164,7 +164,6 @@ function Payments() {
                 }
                 required
               >
-                <option value="">Selecciona un concepto...</option>
                 <option value="Otro pago">Otro pago</option>
                 <option value="Mora">Mora</option>
                 <option value="Multa">Multa</option>
@@ -198,7 +197,10 @@ function Payments() {
             </div>
 
             <div className="form-group">
-              <label>Comprobante</label>
+              <label>
+                Comprobante{" "}
+                {!voucherFile && <span style={{ color: "#e74c3c" }}>*</span>}
+              </label>
               <div className="upload-buttons">
                 <button
                   type="button"
@@ -230,7 +232,11 @@ function Payments() {
                 onChange={handleFileChange}
                 style={{ display: "none" }}
               />
-              {voucherFile && <p className="file-name">{voucherFile.name}</p>}
+              {voucherFile && (
+                <p className="file-name" style={{ color: "#2ecc71" }}>
+                  ✅ {voucherFile.name}
+                </p>
+              )}
             </div>
 
             <button type="submit" className="btn" disabled={uploading}>
@@ -240,8 +246,8 @@ function Payments() {
             {message && (
               <div
                 className={`message ${
-                  message.includes("Error")
-                    ? "message-error"
+                  message.includes("Error") || message.includes("Por favor")
+                    ? "message-warning"
                     : "message-success"
                 }`}
               >

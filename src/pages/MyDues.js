@@ -316,16 +316,6 @@ function MyDues() {
         )}
       </div>
 
-      {message && (
-        <div
-          className={`message ${
-            message.includes("Error") ? "message-error" : "message-success"
-          }`}
-        >
-          {message}
-        </div>
-      )}
-
       {showPaymentForm && selectedDue && (
         <div
           className="payment-modal-overlay"
@@ -338,9 +328,24 @@ function MyDues() {
               {selectedDue.amount}
             </p>
 
+            {message && (
+              <div
+                className={`message ${
+                  message.includes("Por favor")
+                    ? "message-warning"
+                    : "message-success"
+                }`}
+              >
+                {message}
+              </div>
+            )}
+
             <form onSubmit={handleSubmitPayment}>
               <div className="form-group">
-                <label>Comprobante de Pago</label>
+                <label>
+                  Comprobante de Pago{" "}
+                  {!voucherFile && <span style={{ color: "#e74c3c" }}>*</span>}
+                </label>
                 <div className="upload-buttons">
                   <button
                     type="button"
@@ -372,7 +377,11 @@ function MyDues() {
                   onChange={handleFileChange}
                   style={{ display: "none" }}
                 />
-                {voucherFile && <p className="file-name">{voucherFile.name}</p>}
+                {voucherFile && (
+                  <p className="file-name" style={{ color: "#2ecc71" }}>
+                    ✅ {voucherFile.name}
+                  </p>
+                )}
               </div>
 
               <div className="modal-actions">

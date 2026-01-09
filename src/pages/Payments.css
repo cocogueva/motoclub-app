@@ -59,19 +59,20 @@
   padding: 1rem;
   border-radius: 4px;
   font-size: 0.875rem;
+  font-weight: 500;
   animation: slideDown 0.3s ease;
 }
 
 .message-success {
-  background: rgba(46, 213, 115, 0.1);
-  border: 1px solid rgba(46, 213, 115, 0.3);
-  color: #2ed573;
+  background: rgba(46, 204, 113, 0.15);
+  border: 1px solid #2ecc71;
+  color: #27ae60;
 }
 
-.message-error {
-  background: rgba(232, 220, 197, 0.1);
-  border: 1px solid rgba(232, 220, 197, 0.3);
-  color: var(--color-spark);
+.message-warning {
+  background: rgba(241, 196, 15, 0.15);
+  border: 1px solid #f1c40f;
+  color: #f39c12;
 }
 
 /* No Results */
@@ -262,44 +263,4 @@
   flex: 1;
   padding: 0.75rem;
   font-size: 0.875rem;
-}
-
-/* Upload Buttons for Camera/Gallery */
-.upload-buttons {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.upload-buttons .btn-secondary {
-  flex: 1;
-  padding: 0.75rem;
-  font-size: 0.875rem;
-  background: var(--color-steel);
-  color: var(--color-spark);
-  border: 2px solid var(--color-exhaust);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: center;
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: 0.5px;
-}
-
-.upload-buttons .btn-secondary:hover {
-  background: var(--color-exhaust);
-  border-color: var(--color-primary);
-  transform: translateY(-2px);
-}
-
-.upload-buttons .btn-secondary:active {
-  transform: translateY(0);
-}
-
-/* Hide camera button on desktop */
-@media (min-width: 769px) {
-  .upload-buttons button:first-child {
-    display: none;
-  }
 }
