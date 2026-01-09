@@ -11,10 +11,12 @@ function Payments() {
     monto: "100",
     concepto_pago: "",
     comentario: "",
-    payment_type: "otro_concepto", // Always other payments
+    payment_type: "otro_concepto",
   });
   const [voucherFile, setVoucherFile] = useState(null);
   const [message, setMessage] = useState("");
+  const cameraInputRef = React.useRef(null);
+  const galleryInputRef = React.useRef(null);
 
   useEffect(() => {
     loadPayments();
@@ -64,7 +66,6 @@ function Payments() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      // Get member_id from members table using email
       const { data: memberData, error: memberError } = await supabase
         .from("members")
         .select("id")
@@ -75,7 +76,6 @@ function Payments() {
         throw new Error("Usuario no encontrado en la tabla de miembros");
       }
 
-      // Upload voucher to Supabase Storage
       const fileExt = voucherFile.name.split(".").pop();
       const fileName = `${user.id}_${Date.now()}.${fileExt}`;
       const filePath = `vouchers/${fileName}`;
@@ -86,12 +86,10 @@ function Payments() {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
       const {
         data: { publicUrl },
       } = supabase.storage.from("payments").getPublicUrl(filePath);
 
-      // Insert payment record with member_id
       const { error: insertError } = await supabase.from("payments").insert([
         {
           member_id: memberData.id,
@@ -200,14 +198,37 @@ function Payments() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="voucher">Comprobante</label>
+              <label>Comprobante</label>
+              <div className="upload-buttons">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => cameraInputRef.current?.click()}
+                >
+                  📷 Tomar Foto
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => galleryInputRef.current?.click()}
+                >
+                  🖼️ Subir Imagen
+                </button>
+              </div>
               <input
-                id="voucher"
+                ref={cameraInputRef}
                 type="file"
                 accept="image/*"
                 capture="environment"
                 onChange={handleFileChange}
-                required
+                style={{ display: "none" }}
+              />
+              <input
+                ref={galleryInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                style={{ display: "none" }}
               />
               {voucherFile && <p className="file-name">{voucherFile.name}</p>}
             </div>

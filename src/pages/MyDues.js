@@ -22,12 +22,14 @@ function MyDues() {
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [availableYears, setAvailableYears] = useState([]);
-  const [statusFilter, setStatusFilter] = useState(["overdue", "pending"]); // Default filter
+  const [statusFilter, setStatusFilter] = useState(["overdue", "pending"]);
   const [selectedDue, setSelectedDue] = useState(null);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [voucherFile, setVoucherFile] = useState(null);
   const [message, setMessage] = useState("");
+  const cameraInputRef = React.useRef(null);
+  const galleryInputRef = React.useRef(null);
 
   useEffect(() => {
     loadDues();
@@ -57,7 +59,6 @@ function MyDues() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      // Get member ID
       const { data: memberData } = await supabase
         .from("members")
         .select("id")
@@ -69,7 +70,6 @@ function MyDues() {
         return;
       }
 
-      // Get dues for selected year
       const { data: duesData, error } = await supabase
         .from("monthly_dues")
         .select("*")
@@ -79,7 +79,6 @@ function MyDues() {
 
       if (error) throw error;
 
-      // Get available years
       const { data: yearsData } = await supabase
         .from("monthly_dues")
         .select("year")
@@ -127,7 +126,6 @@ function MyDues() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      // Get member_id
       const { data: memberData } = await supabase
         .from("members")
         .select("id")
@@ -136,7 +134,6 @@ function MyDues() {
 
       if (!memberData) throw new Error("Miembro no encontrado");
 
-      // Upload voucher
       const fileExt = voucherFile.name.split(".").pop();
       const fileName = `${user.id}_${Date.now()}.${fileExt}`;
       const filePath = `vouchers/${fileName}`;
@@ -151,7 +148,6 @@ function MyDues() {
         data: { publicUrl },
       } = supabase.storage.from("payments").getPublicUrl(filePath);
 
-      // Create payment record
       const { data: paymentData, error: paymentError } = await supabase
         .from("payments")
         .insert([
@@ -176,10 +172,6 @@ function MyDues() {
 
       if (paymentError) throw paymentError;
 
-      console.log("Payment created:", paymentData);
-      console.log("Updating due with ID:", selectedDue.id);
-
-      // Update due status
       const { data: updateData, error: updateError } = await supabase
         .from("monthly_dues")
         .update({
@@ -190,19 +182,13 @@ function MyDues() {
         .eq("id", selectedDue.id)
         .select();
 
-      if (updateError) {
-        console.error("Update error:", updateError);
-        throw updateError;
-      }
-
-      console.log("Due updated:", updateData);
+      if (updateError) throw updateError;
 
       setMessage("¡Pago registrado exitosamente!");
       setVoucherFile(null);
       setShowPaymentForm(false);
       setSelectedDue(null);
 
-      // Reload dues to show updated status
       await loadDues();
     } catch (error) {
       console.error("Error submitting payment:", error);
@@ -354,14 +340,37 @@ function MyDues() {
 
             <form onSubmit={handleSubmitPayment}>
               <div className="form-group">
-                <label htmlFor="voucher">Comprobante de Pago</label>
+                <label>Comprobante de Pago</label>
+                <div className="upload-buttons">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => cameraInputRef.current?.click()}
+                  >
+                    📷 Tomar Foto
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => galleryInputRef.current?.click()}
+                  >
+                    🖼️ Subir Imagen
+                  </button>
+                </div>
                 <input
-                  id="voucher"
+                  ref={cameraInputRef}
                   type="file"
                   accept="image/*"
                   capture="environment"
                   onChange={handleFileChange}
-                  required
+                  style={{ display: "none" }}
+                />
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  style={{ display: "none" }}
                 />
                 {voucherFile && <p className="file-name">{voucherFile.name}</p>}
               </div>
