@@ -48,7 +48,11 @@ function MyDues() {
 
   const filteredDues =
     statusFilter.length > 0
-      ? dues.filter((due) => statusFilter.includes(due.status))
+      ? dues.filter((due) => {
+          // Include frozen dues when "paid" filter is selected
+          if (due.is_frozen && statusFilter.includes("paid")) return true;
+          return statusFilter.includes(due.status);
+        })
       : dues;
 
   const loadDues = async () => {
@@ -61,13 +65,44 @@ function MyDues() {
 
       const { data: memberData } = await supabase
         .from("members")
-        .select("id")
+        .select("id, puesto, frozen_since")
         .eq("email", user.email)
         .single();
 
       if (!memberData) {
         setLoading(false);
         return;
+      }
+
+      // Auto-freeze logic: if member is frozen, mark overdue dues as frozen
+      const isFrozen = memberData.puesto?.toLowerCase().includes("congelado");
+      const frozenSince = memberData.frozen_since ? new Date(memberData.frozen_since) : null;
+
+      if (isFrozen && frozenSince) {
+        // Find overdue dues that should be frozen (month >= frozen_since, not already frozen)
+        const { data: overdueDues } = await supabase
+          .from("monthly_dues")
+          .select("*")
+          .eq("member_id", memberData.id)
+          .eq("status", "overdue")
+          .or("is_frozen.is.null,is_frozen.eq.false");
+
+        if (overdueDues && overdueDues.length > 0) {
+          // Filter dues where month is on or after frozen_since
+          const duesToFreeze = overdueDues.filter((due) => {
+            const dueMonth = new Date(due.year, due.month - 1, 1);
+            return dueMonth >= frozenSince;
+          });
+
+          // Update those dues to is_frozen = true
+          if (duesToFreeze.length > 0) {
+            const idsToFreeze = duesToFreeze.map((d) => d.id);
+            await supabase
+              .from("monthly_dues")
+              .update({ is_frozen: true })
+              .in("id", idsToFreeze);
+          }
+        }
       }
 
       const { data: duesData, error } = await supabase
@@ -205,6 +240,9 @@ function MyDues() {
 
     if (due.status === "paid") {
       return { text: "Pagado", className: "status-paid", icon: "✅" };
+    } else if (due.is_frozen) {
+      // Check is_frozen directly from the database
+      return { text: "Congelado", className: "status-frozen", icon: "❄️" };
     } else if (due.status === "overdue") {
       return {
         text: `Vencido (${Math.abs(daysUntilDue)} días)`,
@@ -223,7 +261,7 @@ function MyDues() {
   };
 
   const totalDue = dues
-    .filter((d) => d.status !== "paid")
+    .filter((d) => d.status !== "paid" && !d.is_frozen)
     .reduce((sum, d) => sum + parseFloat(d.amount), 0);
   const totalPaid = dues
     .filter((d) => d.status === "paid")
@@ -275,7 +313,7 @@ function MyDues() {
         <div className="summary-card">
           <span className="summary-label">Cuotas</span>
           <span className="summary-value">
-            {dues.filter((d) => d.status === "paid").length} / {dues.length}
+            {dues.filter((d) => d.status === "paid" || d.is_frozen).length} / {dues.length}
           </span>
         </div>
       </div>
@@ -288,7 +326,7 @@ function MyDues() {
           }`}
           onClick={() => toggleStatusFilter("overdue")}
         >
-          🔴 Vencido ({dues.filter((d) => d.status === "overdue").length})
+          🔴 Vencido ({dues.filter((d) => d.status === "overdue" && !d.is_frozen).length})
         </button>
         <button
           className={`filter-chip ${
@@ -304,7 +342,7 @@ function MyDues() {
           }`}
           onClick={() => toggleStatusFilter("paid")}
         >
-          ✅ Pagado ({dues.filter((d) => d.status === "paid").length})
+          ✅ Pagado ({dues.filter((d) => d.status === "paid" || d.is_frozen).length})
         </button>
         {statusFilter.length !== 3 && (
           <button
@@ -448,7 +486,7 @@ function MyDues() {
                 )}
               </div>
 
-              {due.status !== "paid" && (
+              {due.status !== "paid" && statusInfo.className !== "status-frozen" && (
                 <button
                   className="btn btn-pay"
                   onClick={() => handlePayDue(due)}

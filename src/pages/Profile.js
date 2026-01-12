@@ -10,6 +10,8 @@ const POSITIONS = [
   "Secretario",
   "Cap de Ruta",
   "Miembro",
+  "Congelado",
+  "Prospecto",
 ];
 
 function Profile() {

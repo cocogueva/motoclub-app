@@ -101,7 +101,10 @@ function Members() {
                   {member.puesto && (
                     <div className="detail-item">
                       <span className="detail-icon">👤</span>
-                      <span>{member.puesto}</span>
+                      <span>
+                        {member.puesto}
+                        {member.puesto === "Congelado" && " 🥶"}
+                      </span>
                     </div>
                   )}
 

@@ -20,6 +20,7 @@ const MONTHS = [
 function AllPayments() {
   const [members, setMembers] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [monthlyDues, setMonthlyDues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState("all");
@@ -52,6 +53,14 @@ function AllPayments() {
 
       if (paymentsError) throw paymentsError;
 
+      // Load all monthly dues for the selected year (to check is_frozen)
+      const { data: duesData, error: duesError } = await supabase
+        .from("monthly_dues")
+        .select("member_id, month, year, is_frozen")
+        .eq("year", selectedYear);
+
+      if (duesError) throw duesError;
+
       // Get available years from payments
       const { data: allPayments } = await supabase
         .from("payments")
@@ -66,6 +75,7 @@ function AllPayments() {
 
       setMembers(membersData || []);
       setPayments(paymentsData || []);
+      setMonthlyDues(duesData || []);
       setAvailableYears(years);
     } catch (error) {
       console.error("Error loading data:", error);
@@ -76,6 +86,14 @@ function AllPayments() {
 
   const getMemberPayments = (memberEmail) => {
     return payments.filter((p) => p.email_registro === memberEmail);
+  };
+
+  const isMonthFrozen = (memberId, month) => {
+    const monthIndex = MONTHS.indexOf(month) + 1; // 1-12
+    const due = monthlyDues.find(
+      (d) => d.member_id === memberId && d.month === monthIndex && d.year === selectedYear
+    );
+    return due?.is_frozen || false;
   };
 
   const hasPaidMonth = (memberEmail, month) => {
@@ -133,12 +151,14 @@ function AllPayments() {
     return daysUntilDue <= 15 && daysUntilDue > 0;
   };
 
-  const getMonthStatus = (memberEmail, month) => {
-    const paid = hasPaidMonth(memberEmail, month);
+  const getMonthStatus = (member, month) => {
+    const paid = hasPaidMonth(member.email, month);
+    const frozen = isMonthFrozen(member.id, month);
     const overdue = isMonthOverdue(month);
     const dueSoon = isMonthDueSoon(month);
 
     if (paid) return "paid";
+    if (frozen) return "frozen";
     if (overdue) return "overdue";
     if (dueSoon) return "due-soon";
     return "pending";
@@ -170,7 +190,9 @@ function AllPayments() {
       return { ...member, totalPaid, paymentsCount: cuotaPayments.length };
     } else {
       const paidThisMonth = hasPaidMonth(member.email, selectedMonth);
-      return { ...member, totalPaid, paidThisMonth };
+      // Check if this specific month is frozen from the database
+      const frozenThisMonth = isMonthFrozen(member.id, selectedMonth);
+      return { ...member, totalPaid, paidThisMonth, frozen: frozenThisMonth };
     }
   });
 
@@ -259,7 +281,7 @@ function AllPayments() {
               {/* Month indicators */}
               <div className="month-indicators">
                 {MONTHS.map((month) => {
-                  const status = getMonthStatus(member.email, month);
+                  const status = getMonthStatus(member, month);
                   return (
                     <div
                       key={month}
@@ -267,6 +289,8 @@ function AllPayments() {
                       title={`${month} - ${
                         status === "paid"
                           ? "Pagado"
+                          : status === "frozen"
+                          ? "Congelado"
                           : status === "overdue"
                           ? "Vencido"
                           : status === "due-soon"
@@ -275,6 +299,7 @@ function AllPayments() {
                       }`}
                     >
                       {status === "paid" && "✓"}
+                      {status === "frozen" && "❄️"}
                       {status === "overdue" && "✗"}
                       {status === "due-soon" && "!"}
                       {status === "pending" && month.substring(0, 3)}
@@ -294,7 +319,10 @@ function AllPayments() {
             </h2>
             <p>
               {filteredMembers.filter((m) => m.paidThisMonth).length} de{" "}
-              {members.length} miembros pagaron
+              {filteredMembers.filter((m) => !m.frozen).length} miembros pagaron
+              {filteredMembers.filter((m) => m.frozen).length > 0 && (
+                <span> ({filteredMembers.filter((m) => m.frozen).length} congelados)</span>
+              )}
             </p>
           </div>
 
@@ -303,19 +331,19 @@ function AllPayments() {
               <div
                 key={member.id}
                 className={`member-simple-card ${
-                  member.paidThisMonth ? "paid" : "unpaid"
+                  member.paidThisMonth ? "paid" : member.frozen ? "frozen" : "unpaid"
                 } fade-in`}
                 style={{ animationDelay: `${index * 0.03}s` }}
               >
                 <div className="status-indicator">
-                  {member.paidThisMonth ? "✓" : "✗"}
+                  {member.paidThisMonth ? "✓" : member.frozen ? "❄️" : "✗"}
                 </div>
                 <div className="member-simple-info">
                   <h4>
                     {member.nombre} {member.apellido}
                   </h4>
                   <span className="status-text">
-                    {member.paidThisMonth ? "Pagado" : "No pagado"}
+                    {member.paidThisMonth ? "Pagado" : member.frozen ? "Congelado" : "No pagado"}
                   </span>
                 </div>
               </div>

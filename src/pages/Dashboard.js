@@ -52,7 +52,7 @@ function Dashboard() {
       // Get member's dues
       const { data: memberData } = await supabase
         .from("members")
-        .select("id")
+        .select("id, puesto, frozen_since")
         .eq("email", user.email)
         .single();
 
@@ -60,21 +60,52 @@ function Dashboard() {
       let nextDueDate = null;
 
       if (memberData) {
-        // Get overdue dues count
-        const { count: overdueCount } = await supabase
+        // Auto-freeze logic: if member is frozen, mark overdue dues as frozen
+        const isFrozen = memberData.puesto?.toLowerCase().includes("congelado");
+        const frozenSince = memberData.frozen_since ? new Date(memberData.frozen_since) : null;
+
+        if (isFrozen && frozenSince) {
+          // Find overdue dues that should be frozen (month >= frozen_since, not already frozen)
+          const { data: duesToCheck } = await supabase
+            .from("monthly_dues")
+            .select("*")
+            .eq("member_id", memberData.id)
+            .eq("status", "overdue")
+            .or("is_frozen.is.null,is_frozen.eq.false");
+
+          if (duesToCheck && duesToCheck.length > 0) {
+            const duesToFreeze = duesToCheck.filter((due) => {
+              const dueMonth = new Date(due.year, due.month - 1, 1);
+              return dueMonth >= frozenSince;
+            });
+
+            if (duesToFreeze.length > 0) {
+              const idsToFreeze = duesToFreeze.map((d) => d.id);
+              await supabase
+                .from("monthly_dues")
+                .update({ is_frozen: true })
+                .in("id", idsToFreeze);
+            }
+          }
+        }
+
+        // Get overdue dues that are NOT frozen
+        const { data: overdueDues } = await supabase
           .from("monthly_dues")
-          .select("*", { count: "exact", head: true })
+          .select("*")
           .eq("member_id", memberData.id)
-          .eq("status", "overdue");
+          .eq("status", "overdue")
+          .or("is_frozen.is.null,is_frozen.eq.false");
 
-        myOverdueDues = overdueCount || 0;
+        myOverdueDues = overdueDues?.length || 0;
 
-        // Get next pending due
+        // Get next pending due that is NOT frozen
         const { data: nextDue } = await supabase
           .from("monthly_dues")
           .select("due_date")
           .eq("member_id", memberData.id)
           .in("status", ["pending", "overdue"])
+          .or("is_frozen.is.null,is_frozen.eq.false")
           .order("due_date", { ascending: true })
           .limit(1)
           .single();
