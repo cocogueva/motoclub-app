@@ -91,7 +91,10 @@ function AllPayments() {
   const isMonthFrozen = (memberId, month) => {
     const monthIndex = MONTHS.indexOf(month) + 1; // 1-12
     const due = monthlyDues.find(
-      (d) => d.member_id === memberId && d.month === monthIndex && d.year === selectedYear
+      (d) =>
+        d.member_id === memberId &&
+        d.month === monthIndex &&
+        d.year === selectedYear
     );
     return due?.is_frozen || false;
   };
@@ -192,7 +195,15 @@ function AllPayments() {
       const paidThisMonth = hasPaidMonth(member.email, selectedMonth);
       // Check if this specific month is frozen from the database
       const frozenThisMonth = isMonthFrozen(member.id, selectedMonth);
-      return { ...member, totalPaid, paidThisMonth, frozen: frozenThisMonth };
+      // Check if this month is overdue (past the 6th)
+      const overdueThisMonth = isMonthOverdue(selectedMonth);
+      return {
+        ...member,
+        totalPaid,
+        paidThisMonth,
+        frozen: frozenThisMonth,
+        overdue: overdueThisMonth,
+      };
     }
   });
 
@@ -321,33 +332,51 @@ function AllPayments() {
               {filteredMembers.filter((m) => m.paidThisMonth).length} de{" "}
               {filteredMembers.filter((m) => !m.frozen).length} miembros pagaron
               {filteredMembers.filter((m) => m.frozen).length > 0 && (
-                <span> ({filteredMembers.filter((m) => m.frozen).length} congelados)</span>
+                <span>
+                  {" "}
+                  ({filteredMembers.filter((m) => m.frozen).length} congelados)
+                </span>
               )}
             </p>
           </div>
 
           <div className="members-simple-grid">
-            {filteredMembers.map((member, index) => (
-              <div
-                key={member.id}
-                className={`member-simple-card ${
-                  member.paidThisMonth ? "paid" : member.frozen ? "frozen" : "unpaid"
-                } fade-in`}
-                style={{ animationDelay: `${index * 0.03}s` }}
-              >
-                <div className="status-indicator">
-                  {member.paidThisMonth ? "✓" : member.frozen ? "❄️" : "✗"}
+            {filteredMembers.map((member, index) => {
+              // Determine the status class and text
+              let statusClass = "unpaid";
+              let statusText = "Pendiente";
+              let statusIcon = "✗";
+
+              if (member.paidThisMonth) {
+                statusClass = "paid";
+                statusText = "Pagado";
+                statusIcon = "✓";
+              } else if (member.frozen) {
+                statusClass = "frozen";
+                statusText = "Congelado";
+                statusIcon = "❄️";
+              } else if (member.overdue) {
+                statusClass = "overdue";
+                statusText = "Vencido";
+                statusIcon = "✗";
+              }
+
+              return (
+                <div
+                  key={member.id}
+                  className={`member-simple-card ${statusClass} fade-in`}
+                  style={{ animationDelay: `${index * 0.03}s` }}
+                >
+                  <div className="status-indicator">{statusIcon}</div>
+                  <div className="member-simple-info">
+                    <h4>
+                      {member.nombre} {member.apellido}
+                    </h4>
+                    <span className="status-text">{statusText}</span>
+                  </div>
                 </div>
-                <div className="member-simple-info">
-                  <h4>
-                    {member.nombre} {member.apellido}
-                  </h4>
-                  <span className="status-text">
-                    {member.paidThisMonth ? "Pagado" : member.frozen ? "Congelado" : "No pagado"}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
