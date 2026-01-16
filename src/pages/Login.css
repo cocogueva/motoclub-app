@@ -27,13 +27,13 @@
 
 .road-line {
   position: absolute;
-  width: 4px;
+  width: 10px;
   height: 100px;
   background: var(--color-primary);
   left: 50%;
   transform: translateX(-50%);
-  animation: roadMove 2s linear infinite;
-  box-shadow: 0 0 10px var(--color-primary);
+  animation: roadMove 1.7s linear infinite;
+  box-shadow: 0 0 15px var(--color-primary);
 }
 
 .road-line:nth-child(1) {
@@ -42,12 +42,12 @@
 }
 
 .road-line:nth-child(2) {
-  animation-delay: 0.7s;
+  animation-delay: 0.57s;
   top: -100px;
 }
 
 .road-line:nth-child(3) {
-  animation-delay: 1.4s;
+  animation-delay: 1.14s;
   top: -100px;
 }
 
