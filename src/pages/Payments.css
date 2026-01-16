@@ -264,3 +264,21 @@
   padding: 0.75rem;
   font-size: 0.875rem;
 }
+
+/* Hide camera button on desktop */
+@media (min-width: 769px) {
+  .upload-buttons {
+    justify-content: flex-start;
+  }
+
+  .upload-buttons button:first-child {
+    display: none;
+  }
+
+  .upload-buttons button.btn-secondary {
+    flex: 0 0 auto;
+    width: fit-content;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
