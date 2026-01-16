@@ -280,12 +280,10 @@
    -------------------------------------------------------------------------- */
 .member-simple-card.paid {
   border-left: 4px solid #2ecc71;
-  border-color: rgba(46, 204, 113, 0.4);
 }
 
 .member-simple-card.paid:hover {
-  border-color: #2ecc71;
-  box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* --------------------------------------------------------------------------
@@ -308,12 +306,10 @@
    -------------------------------------------------------------------------- */
 .member-simple-card.overdue {
   border-left: 4px solid #e74c3c;
-  border-color: rgba(231, 76, 60, 0.4);
 }
 
 .member-simple-card.overdue:hover {
-  border-color: #e74c3c;
-  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* --------------------------------------------------------------------------
@@ -322,12 +318,10 @@
    -------------------------------------------------------------------------- */
 .member-simple-card.frozen {
   border-left: 4px solid #3498db;
-  border-color: rgba(52, 152, 219, 0.4);
 }
 
 .member-simple-card.frozen:hover {
-  border-color: #3498db;
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* --------------------------------------------------------------------------
