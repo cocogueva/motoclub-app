@@ -249,9 +249,9 @@ function MyDues() {
         className: "status-overdue",
         icon: "🔴",
       };
-    } else if (daysUntilDue <= 15 && daysUntilDue > 0) {
+    } else if (daysUntilDue <= 10 && daysUntilDue >= 0) {
       return {
-        text: `Próximo vencimiento (${daysUntilDue} días)`,
+        text: `Vence en ${daysUntilDue} días`,
         className: "status-due-soon",
         icon: "🟡",
       };

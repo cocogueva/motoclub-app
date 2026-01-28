@@ -325,6 +325,32 @@
 }
 
 /* --------------------------------------------------------------------------
+   DUE SOON (Próximo) - Orange #f39c12
+   Card style for members whose payment is due within 10 days
+   -------------------------------------------------------------------------- */
+.member-simple-card.due-soon {
+  border-left: 4px solid #f39c12;
+}
+
+.member-simple-card.due-soon:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   PENDING (Pendiente) - Grey
+   Card style for future months not yet due
+   -------------------------------------------------------------------------- */
+.member-simple-card.pending {
+  border-left: 4px solid var(--color-exhaust);
+  opacity: 0.7;
+}
+
+.member-simple-card.pending:hover {
+  opacity: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* --------------------------------------------------------------------------
    STATUS INDICATOR (Circle icon on each card)
    The circular icon with checkmark, X, or snowflake
    -------------------------------------------------------------------------- */
@@ -362,6 +388,18 @@
 .member-simple-card.frozen .status-indicator {
   background: rgba(52, 152, 219, 0.2);
   color: #3498db;
+}
+
+/* Due soon indicator - Orange background and icon */
+.member-simple-card.due-soon .status-indicator {
+  background: rgba(243, 156, 18, 0.2);
+  color: #f39c12;
+}
+
+/* Pending indicator - Grey background and icon */
+.member-simple-card.pending .status-indicator {
+  background: var(--color-steel);
+  color: var(--color-exhaust);
 }
 
 /* --------------------------------------------------------------------------
@@ -403,6 +441,16 @@
 /* Frozen status text - Blue */
 .member-simple-card.frozen .status-text {
   color: #3498db;
+}
+
+/* Due soon status text - Orange */
+.member-simple-card.due-soon .status-text {
+  color: #f39c12;
+}
+
+/* Pending status text - Grey */
+.member-simple-card.pending .status-text {
+  color: var(--color-exhaust);
 }
 
 /* ==========================================================================

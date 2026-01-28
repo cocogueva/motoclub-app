@@ -137,9 +137,11 @@ function AllPayments() {
     const currentDate = new Date();
     const currentYear = selectedYear;
     const monthIndex = MONTHS.indexOf(month);
-    const dueDate = new Date(currentYear, monthIndex, 6); // 6th of the month
+    // Overdue starts on day 7 (day 6 is still OK to pay)
+    const overdueDate = new Date(currentYear, monthIndex, 7);
+    overdueDate.setHours(0, 0, 0, 0);
 
-    return currentDate > dueDate;
+    return currentDate >= overdueDate;
   };
 
   const isMonthDueSoon = (month) => {
@@ -147,11 +149,13 @@ function AllPayments() {
     const currentYear = selectedYear;
     const monthIndex = MONTHS.indexOf(month);
     const dueDate = new Date(currentYear, monthIndex, 6); // 6th of the month
+    dueDate.setHours(23, 59, 59, 999); // End of day 6
     const daysUntilDue = Math.ceil(
       (dueDate - currentDate) / (1000 * 60 * 60 * 24)
     );
 
-    return daysUntilDue <= 15 && daysUntilDue > 0;
+    // Due soon: within 10 days of due date, including the due date itself
+    return daysUntilDue <= 10 && daysUntilDue >= 0;
   };
 
   const getMonthStatus = (member, month) => {
@@ -197,12 +201,15 @@ function AllPayments() {
       const frozenThisMonth = isMonthFrozen(member.id, selectedMonth);
       // Check if this month is overdue (past the 6th)
       const overdueThisMonth = isMonthOverdue(selectedMonth);
+      // Check if this month is due soon (within 10 days)
+      const dueSoonThisMonth = isMonthDueSoon(selectedMonth);
       return {
         ...member,
         totalPaid,
         paidThisMonth,
         frozen: frozenThisMonth,
         overdue: overdueThisMonth,
+        dueSoon: dueSoonThisMonth,
       };
     }
   });
@@ -343,7 +350,7 @@ function AllPayments() {
           <div className="members-simple-grid">
             {filteredMembers.map((member, index) => {
               // Determine the status class and text
-              let statusClass = "unpaid";
+              let statusClass = "pending";
               let statusText = "Pendiente";
               let statusIcon = "✗";
 
@@ -359,6 +366,10 @@ function AllPayments() {
                 statusClass = "overdue";
                 statusText = "Vencido";
                 statusIcon = "✗";
+              } else if (member.dueSoon) {
+                statusClass = "due-soon";
+                statusText = "Vence pronto";
+                statusIcon = "!";
               }
 
               return (
