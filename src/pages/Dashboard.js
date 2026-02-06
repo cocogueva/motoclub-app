@@ -3,6 +3,19 @@ import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 
+// Helper function to parse date string as local date (not UTC)
+const parseLocalDate = (dateString) => {
+  if (!dateString) return null;
+  if (dateString instanceof Date) return dateString;
+  
+  const dateMatch = dateString.toString().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (dateMatch) {
+    const [, year, month, day] = dateMatch.map(Number);
+    return new Date(year, month - 1, day);
+  }
+  return new Date(dateString);
+};
+
 function Dashboard() {
   const navigate = useNavigate();
   const [stats, setStats] = useState({
@@ -158,7 +171,7 @@ function Dashboard() {
             {stats.nextDueDate && (
               <p className="stat-sublabel">
                 Próxima:{" "}
-                {new Date(stats.nextDueDate).toLocaleDateString("es-PE", {
+                {parseLocalDate(stats.nextDueDate).toLocaleDateString("es-PE", {
                   day: "numeric",
                   month: "short",
                 })}

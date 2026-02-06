@@ -2,6 +2,20 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "../supabaseClient";
 import "./MyDues.css";
 
+// Helper function to parse date string as local date (not UTC)
+const parseLocalDate = (dateString) => {
+  if (!dateString) return null;
+  if (dateString instanceof Date) return dateString;
+  
+  const dateMatch = dateString.toString().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (dateMatch) {
+    const [, year, month, day] = dateMatch.map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  return new Date(dateString);
+};
+
 const MONTHS = [
   "Enero",
   "Febrero",
@@ -235,7 +249,9 @@ function MyDues() {
 
   const getStatusInfo = (due) => {
     const today = new Date();
-    const dueDate = new Date(due.due_date);
+    today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+    const dueDate = parseLocalDate(due.due_date);
+    dueDate.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
     const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
 
     if (due.status === "paid") {
@@ -461,7 +477,7 @@ function MyDues() {
                 <div className="info-row">
                   <span className="info-label">Vence:</span>
                   <span className="info-value">
-                    {new Date(due.due_date).toLocaleDateString("es-PE", {
+                    {parseLocalDate(due.due_date).toLocaleDateString("es-PE", {
                       day: "numeric",
                       month: "long",
                       year: "numeric",
@@ -480,7 +496,7 @@ function MyDues() {
                   <div className="info-row">
                     <span className="info-label">Pagado:</span>
                     <span className="info-value">
-                      {new Date(due.paid_date).toLocaleDateString("es-PE")}
+                      {parseLocalDate(due.paid_date).toLocaleDateString("es-PE")}
                     </span>
                   </div>
                 )}
