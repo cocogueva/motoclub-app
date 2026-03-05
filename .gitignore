@@ -9,6 +9,9 @@ node_modules/
 # Production
 /build
 
+# Claude
+CLAUDE.md
+
 # Misc
 .DS_Store
 .env
