@@ -229,9 +229,9 @@ function Dashboard() {
             <span className="action-label">Mis Pagos</span>
           </button>
 
-          <button className="action-card" onClick={() => navigate("/members")}>
-            <span className="action-icon">☠️</span>
-            <span className="action-label">Ver Miembros</span>
+          <button className="action-card" onClick={() => navigate("/my-debts")}>
+            <span className="action-icon">💀</span>
+            <span className="action-label">Ver Deudas</span>
           </button>
 
           <button className="action-card" onClick={() => navigate("/profile")}>

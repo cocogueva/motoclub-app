@@ -12,6 +12,7 @@ import Members from "./pages/Members";
 import Payments from "./pages/Payments";
 import AllPayments from "./pages/AllPayments";
 import MyDues from "./pages/MyDues";
+import MyDebts from "./pages/MyDebts";
 import Profile from "./pages/Profile";
 import Layout from "./components/Layout";
 import "./App.css";
@@ -59,6 +60,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/members" element={<Members />} />
             <Route path="/my-dues" element={<MyDues />} />
+            <Route path="/my-debts" element={<MyDebts />} />
             <Route path="/payments" element={<Payments />} />
             <Route path="/all-payments" element={<AllPayments />} />
             <Route path="/profile" element={<Profile />} />

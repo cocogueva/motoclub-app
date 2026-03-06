@@ -50,6 +50,10 @@ function Layout() {
           <span className="nav-icon">📋</span>
           Mis Cuotas
         </NavLink>
+        <NavLink to="/my-debts" className="nav-link" onClick={closeMenu}>
+          <span className="nav-icon">💀</span>
+          Mis Deudas
+        </NavLink>
         <NavLink to="/members" className="nav-link" onClick={closeMenu}>
           <span className="nav-icon">👥</span>
           Miembros

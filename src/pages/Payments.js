@@ -276,7 +276,11 @@ function Payments() {
               <div className="payment-header-card">
                 <div>
                   <h3 className="payment-month">
-                    {payment.payment_type === "otro_concepto"
+                    {payment.payment_type === "mora"
+                      ? "Mora"
+                      : payment.payment_type === "deuda"
+                      ? payment.concept || payment.mes_pagado
+                      : payment.payment_type === "otro_concepto"
                       ? payment.concepto_pago || payment.mes_pagado
                       : payment.mes_pagado}
                   </h3>
@@ -295,6 +299,10 @@ function Payments() {
                         ? "💳 Cuota"
                         : payment.payment_type === "pago_adelantado"
                         ? "⚡ Adelantado"
+                        : payment.payment_type === "mora"
+                        ? "⚠️ Mora"
+                        : payment.payment_type === "deuda"
+                        ? "💀 Deuda"
                         : "📌 Otro"}
                     </span>
                   )}
