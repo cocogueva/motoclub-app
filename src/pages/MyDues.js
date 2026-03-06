@@ -259,7 +259,7 @@ function MyDues() {
     } else if (due.is_frozen) {
       // Check is_frozen directly from the database
       return { text: "Congelado", className: "status-frozen", icon: "❄️" };
-    } else if (due.status === "overdue") {
+    } else if (due.status === "overdue" || daysUntilDue < 0) {
       return {
         text: `Vencido (${Math.abs(daysUntilDue)} días)`,
         className: "status-overdue",
