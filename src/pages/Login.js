@@ -4,6 +4,7 @@ import "./Login.css";
 
 function Login() {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -14,21 +15,15 @@ function Login() {
       setLoading(true);
       setMessage("");
 
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email,
-        options: {
-          emailRedirectTo: window.location.origin,
-        },
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
       if (error) throw error;
-
-      setMessage(
-        "¡Revisa tu email! Te hemos enviado un enlace mágico para iniciar sesión."
-      );
     } catch (error) {
       setMessage(
-        error.message || "Error al enviar el enlace. Intenta de nuevo."
+        error.message || "Error al iniciar sesión. Verifica tus credenciales."
       );
     } finally {
       setLoading(false);
@@ -77,27 +72,32 @@ function Login() {
             />
           </div>
 
+          <div className="form-group">
+            <label htmlFor="password" className="form-label">
+              Contraseña
+            </label>
+            <input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={loading}
+              className="form-input"
+            />
+          </div>
+
           <button type="submit" className="btn btn-login" disabled={loading}>
-            {loading ? "Enviando..." : "Enviar Link de Acceso"}
+            {loading ? "Ingresando..." : "Iniciar Sesión"}
           </button>
 
           {message && (
-            <div
-              className={`message ${
-                message.includes("Error") ? "message-error" : "message-success"
-              }`}
-            >
+            <div className="message message-error">
               {message}
             </div>
           )}
         </form>
-
-        <div className="login-info">
-          <p>
-            Ingresa tu email y te enviaremos un enlace para iniciar sesión. No
-            necesitas contraseña.
-          </p>
-        </div>
       </div>
     </div>
   );
