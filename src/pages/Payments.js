@@ -165,7 +165,6 @@ function Payments() {
                 required
               >
                 <option value="Otro pago">Otro pago</option>
-                <option value="Mora">Mora</option>
                 <option value="Multa">Multa</option>
               </select>
             </div>
