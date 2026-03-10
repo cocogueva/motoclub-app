@@ -64,7 +64,7 @@ function Layout() {
         </NavLink>
         <NavLink to="/payments" className="nav-link" onClick={closeMenu}>
           <span className="nav-icon">💰</span>
-          Mis Pagos
+          Otros Pagos
         </NavLink>
         <NavLink to="/profile" className="nav-link" onClick={closeMenu}>
           <span className="nav-icon">👤</span>

@@ -226,7 +226,7 @@ function Dashboard() {
         <div className="actions-grid">
           <button className="action-card" onClick={() => navigate("/payments")}>
             <span className="action-icon">🧾</span>
-            <span className="action-label">Mis Pagos</span>
+            <span className="action-label">Otros Pagos</span>
           </button>
 
           <button className="action-card" onClick={() => navigate("/my-debts")}>

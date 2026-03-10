@@ -138,7 +138,7 @@ function Payments() {
     <div className="payments-page">
       <div className="payments-header">
         <div>
-          <h1 className="page-title">Mis Pagos</h1>
+          <h1 className="page-title">Otros Pagos</h1>
           <p className="page-subtitle">
             {payments.length}{" "}
             {payments.length === 1 ? "pago registrado" : "pagos registrados"}
