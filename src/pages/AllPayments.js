@@ -25,6 +25,7 @@ function AllPayments() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [availableYears, setAvailableYears] = useState([]);
+  const [voucherModal, setVoucherModal] = useState(null); // { memberName, month, voucherUrl }
 
   useEffect(() => {
     loadData();
@@ -86,6 +87,35 @@ function AllPayments() {
 
   const getMemberPayments = (memberEmail) => {
     return payments.filter((p) => p.email_registro === memberEmail);
+  };
+
+  const getPaymentForMonth = (memberEmail, month) => {
+    const currentYear = selectedYear;
+    const currentMonth = MONTHS.indexOf(month) + 1;
+
+    return payments.find((p) => {
+      const isCuota = p.payment_type === "cuota_mensual" || p.applies_to_month;
+      if (!isCuota) return false;
+
+      if (p.applies_to_month && p.applies_to_year) {
+        return (
+          p.email_registro === memberEmail &&
+          p.applies_to_month === currentMonth &&
+          p.applies_to_year === currentYear
+        );
+      }
+
+      if (p.mes_pagado && !p.mes_pagado.toLowerCase().includes("mora")) {
+        const paymentYear = new Date(p.fecha).getFullYear();
+        return (
+          p.email_registro === memberEmail &&
+          p.mes_pagado.toLowerCase().includes(month.toLowerCase()) &&
+          paymentYear === currentYear
+        );
+      }
+
+      return false;
+    });
   };
 
   const isMonthFrozen = (memberId, month) => {
@@ -300,13 +330,15 @@ function AllPayments() {
               <div className="month-indicators">
                 {MONTHS.map((month) => {
                   const status = getMonthStatus(member, month);
+                  const payment = status === "paid" ? getPaymentForMonth(member.email, month) : null;
+                  const hasVoucher = payment?.voucher;
                   return (
                     <div
                       key={month}
-                      className={`month-indicator status-${status}`}
+                      className={`month-indicator status-${status}${hasVoucher ? " has-voucher" : ""}`}
                       title={`${month} - ${
                         status === "paid"
-                          ? "Pagado"
+                          ? hasVoucher ? "Pagado — ver voucher" : "Pagado"
                           : status === "frozen"
                           ? "Congelado"
                           : status === "overdue"
@@ -315,6 +347,11 @@ function AllPayments() {
                           ? "Próximo vencimiento"
                           : "Pendiente"
                       }`}
+                      onClick={hasVoucher ? () => setVoucherModal({
+                        memberName: `${member.nombre} ${member.apellido}`,
+                        month,
+                        voucherUrl: payment.voucher,
+                      }) : undefined}
                     >
                       {status === "paid" && "✓"}
                       {status === "frozen" && "❄️"}
@@ -372,11 +409,21 @@ function AllPayments() {
                 statusIcon = "!";
               }
 
+              const monthPayment = member.paidThisMonth
+                ? getPaymentForMonth(member.email, selectedMonth)
+                : null;
+              const monthHasVoucher = monthPayment?.voucher;
+
               return (
                 <div
                   key={member.id}
-                  className={`member-simple-card ${statusClass} fade-in`}
+                  className={`member-simple-card ${statusClass} fade-in${monthHasVoucher ? " has-voucher" : ""}`}
                   style={{ animationDelay: `${index * 0.03}s` }}
+                  onClick={monthHasVoucher ? () => setVoucherModal({
+                    memberName: `${member.nombre} ${member.apellido}`,
+                    month: selectedMonth,
+                    voucherUrl: monthPayment.voucher,
+                  }) : undefined}
                 >
                   <div className="status-indicator">{statusIcon}</div>
                   <div className="member-simple-info">
@@ -388,6 +435,24 @@ function AllPayments() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Voucher preview modal */}
+      {voucherModal && (
+        <div className="voucher-modal-overlay" onClick={() => setVoucherModal(null)}>
+          <div className="voucher-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="voucher-modal-header">
+              <div>
+                <h3>{voucherModal.memberName}</h3>
+                <p>{voucherModal.month} {selectedYear}</p>
+              </div>
+              <button className="voucher-modal-close" onClick={() => setVoucherModal(null)}>✕</button>
+            </div>
+            <div className="voucher-modal-body">
+              <img src={voucherModal.voucherUrl} alt="Voucher de pago" />
+            </div>
           </div>
         </div>
       )}

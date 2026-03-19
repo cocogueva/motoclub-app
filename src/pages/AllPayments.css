@@ -454,6 +454,98 @@
 }
 
 /* ==========================================================================
+   VOUCHER CLICKABLE STATES
+   ========================================================================== */
+.month-indicator.has-voucher {
+  cursor: pointer;
+}
+
+.month-indicator.has-voucher:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px #2ecc71;
+}
+
+.member-simple-card.has-voucher {
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   VOUCHER PREVIEW MODAL
+   ========================================================================== */
+.voucher-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.voucher-modal {
+  background: var(--color-chrome);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.voucher-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--color-steel);
+}
+
+.voucher-modal-header h3 {
+  margin: 0 0 0.25rem 0;
+  color: var(--color-white);
+  font-size: 1.1rem;
+}
+
+.voucher-modal-header p {
+  margin: 0;
+  color: var(--color-exhaust);
+  font-size: 0.875rem;
+}
+
+.voucher-modal-close {
+  background: none;
+  border: none;
+  color: var(--color-exhaust);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.voucher-modal-close:hover {
+  color: var(--color-white);
+}
+
+.voucher-modal-body {
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voucher-modal-body img {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  display: block;
+}
+
+/* ==========================================================================
    RESPONSIVE STYLES
    Adjustments for tablet and mobile screens
    ========================================================================== */
