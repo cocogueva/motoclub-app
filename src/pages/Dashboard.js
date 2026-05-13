@@ -235,6 +235,7 @@ function Dashboard() {
           </button>
 
           <button className="action-card" onClick={() => navigate("/my-debts")}>
+            {stats.myOverdueDues > 0 && <span className="action-alert-dot" />}
             <span className="action-icon">💀</span>
             <span className="action-label">Ver Deudas</span>
           </button>
