@@ -128,6 +128,36 @@
   transform: translateX(4px);
 } */
 
+/* Arresto de colores */
+.stat-card--arrest {
+  border-color: #c0392b;
+}
+
+.stat-card--arrest::before {
+  background: linear-gradient(90deg, #c0392b, #e74c3c);
+}
+
+.stat-card--arrest:hover {
+  border-color: #e74c3c;
+}
+
+.stat-card--arrest .stat-value,
+.stat-card--arrest .stat-label {
+  color: #e74c3c;
+}
+
+.stat-arrest-badge {
+  display: inline-block;
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #e74c3c;
+  border: 1px solid #e74c3c;
+  padding: 0.2rem 0.5rem;
+}
+
 /* Dashboard Actions */
 .dashboard-actions {
   margin-top: 3rem;

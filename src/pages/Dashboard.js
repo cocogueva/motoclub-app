@@ -7,7 +7,7 @@ import "./Dashboard.css";
 const parseLocalDate = (dateString) => {
   if (!dateString) return null;
   if (dateString instanceof Date) return dateString;
-  
+
   const dateMatch = dateString.toString().match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (dateMatch) {
     const [, year, month, day] = dateMatch.map(Number);
@@ -75,7 +75,9 @@ function Dashboard() {
       if (memberData) {
         // Auto-freeze logic: if member is frozen, mark overdue dues as frozen
         const isFrozen = memberData.puesto?.toLowerCase().includes("congelado");
-        const frozenSince = memberData.frozen_since ? new Date(memberData.frozen_since) : null;
+        const frozenSince = memberData.frozen_since
+          ? new Date(memberData.frozen_since)
+          : null;
 
         if (isFrozen && frozenSince) {
           // Find overdue dues that should be frozen (month >= frozen_since, not already frozen)
@@ -160,7 +162,7 @@ function Dashboard() {
 
       <div className="stats-grid">
         <div
-          className="stat-card fade-in"
+          className={`stat-card fade-in${stats.myOverdueDues >= 3 ? " stat-card--arrest" : ""}`}
           style={{ animationDelay: "0.2s" }}
           onClick={() => navigate("/my-dues")}
         >
@@ -168,6 +170,9 @@ function Dashboard() {
           <div className="stat-content">
             <h3 className="stat-value">{stats.myOverdueDues}</h3>
             <p className="stat-label">Cuotas Vencidas</p>
+            {stats.myOverdueDues >= 3 && (
+              <p className="stat-arrest-badge">⚠️ Arresto de colores ☠️</p>
+            )}
             {stats.nextDueDate && (
               <p className="stat-sublabel">
                 Próxima:{" "}
