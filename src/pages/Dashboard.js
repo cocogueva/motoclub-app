@@ -26,6 +26,8 @@ function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [memberPhoto, setMemberPhoto] = useState(null);
+  const [memberNickname, setMemberNickname] = useState(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -65,9 +67,13 @@ function Dashboard() {
       // Get member's dues
       const { data: memberData } = await supabase
         .from("members")
-        .select("id, puesto, frozen_since")
+        .select("id, puesto, frozen_since, foto, apodo, nombre")
         .eq("email", user.email)
         .single();
+
+      if (memberData?.foto) setMemberPhoto(memberData.foto);
+      if (memberData?.apodo || memberData?.nombre)
+        setMemberNickname(memberData.apodo || memberData.nombre);
 
       let myOverdueDues = 0;
       let nextDueDate = null;
@@ -154,10 +160,17 @@ function Dashboard() {
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <h1 className="dashboard-title">Dashboard</h1>
-        <p className="dashboard-welcome">
-          Bienvenido, <span className="text-spark">{user?.email}</span>
-        </p>
+        <div className="dashboard-welcome-row">
+          {memberPhoto && (
+            <img src={memberPhoto} alt="avatar" className="dashboard-avatar" />
+          )}
+          <div>
+            <p className="dashboard-welcome">
+              Bienvenido, <span className="text-spark">{memberNickname}</span>
+            </p>
+            <p className="dashboard-welcome-email">{user?.email}</p>
+          </div>
+        </div>
       </div>
 
       <div className="stats-grid">

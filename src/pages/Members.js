@@ -80,23 +80,23 @@ function Members() {
               className="member-card fade-in"
               style={{ animationDelay: `${index * 0.05}s` }}
             >
-              {member.foto && (
-                <div className="member-photo">
+              <div className="member-photo">
+                {member.foto && (
                   <img src={member.foto} alt={member.nombre} />
+                )}
+                <div className="member-photo-overlay">
+                  <h3 className="member-name">
+                    {member.apodo || `${member.nombre} ${member.apellido}`}
+                  </h3>
+                  {member.apodo && (
+                    <p className="member-fullname">
+                      {member.nombre} {member.apellido}
+                    </p>
+                  )}
                 </div>
-              )}
+              </div>
 
               <div className="member-info">
-                <h3 className="member-name">
-                  {member.apodo || `${member.nombre} ${member.apellido}`}
-                </h3>
-
-                {member.apodo && (
-                  <p className="member-fullname">
-                    {member.nombre} {member.apellido}
-                  </p>
-                )}
-
                 <div className="member-details">
                   {member.puesto && (
                     <div className="detail-item">
