@@ -126,6 +126,14 @@ function Profile() {
 
       const updateData = { ...formData, foto: photoUrl };
 
+      const becomingFrozen = formData.puesto?.toLowerCase().includes("congelado");
+      const wasFrozen = memberData.puesto?.toLowerCase().includes("congelado");
+      if (becomingFrozen && !wasFrozen) {
+        updateData.frozen_since = new Date().toISOString();
+      } else if (!becomingFrozen && wasFrozen) {
+        updateData.frozen_since = null;
+      }
+
       const { error } = await supabase
         .from("members")
         .update(updateData)
