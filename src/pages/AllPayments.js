@@ -32,9 +32,50 @@ function AllPayments() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear]);
 
+  const autoFreezeCongelados = async () => {
+    const { data: frozenMembers } = await supabase
+      .from("members")
+      .select("id, frozen_since")
+      .ilike("puesto", "%congelado%")
+      .not("frozen_since", "is", null);
+
+    if (!frozenMembers?.length) return;
+
+    for (const member of frozenMembers) {
+      const frozenSince = new Date(member.frozen_since);
+      const frozenYear = frozenSince.getFullYear();
+      const frozenMonth = frozenSince.getMonth() + 1;
+
+      const { data: overdueDues } = await supabase
+        .from("monthly_dues")
+        .select("id, month, year")
+        .eq("member_id", member.id)
+        .eq("status", "overdue")
+        .or("is_frozen.is.null,is_frozen.eq.false");
+
+      if (!overdueDues?.length) continue;
+
+      const toFreeze = overdueDues
+        .filter((d) =>
+          d.year > frozenYear ||
+          (d.year === frozenYear && d.month >= frozenMonth)
+        )
+        .map((d) => d.id);
+
+      if (toFreeze.length) {
+        await supabase
+          .from("monthly_dues")
+          .update({ is_frozen: true })
+          .in("id", toFreeze);
+      }
+    }
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
+
+      await autoFreezeCongelados();
 
       // Load all members
       const { data: membersData, error: membersError } = await supabase
