@@ -45,7 +45,7 @@ function AllPayments() {
       // Load all members
       const { data: membersData, error: membersError } = await supabase
         .from("members")
-        .select("id, nombre, apellido, email")
+        .select("id, nombre, apellido, email, puesto, frozen_since")
         .order("nombre");
 
       if (membersError) throw membersError;
@@ -194,13 +194,34 @@ function AllPayments() {
     return daysUntilDue <= 10 && daysUntilDue >= 0;
   };
 
+  const isRetired = (member) => member.puesto?.toLowerCase() === "retirado";
+
+  // True when `month` (of selectedYear) falls on or after the member's leave date.
+  // Months before the leave date keep their real history (paid/congelado/vencido).
+  // Parses the YYYY-MM directly from frozen_since to avoid UTC-offset bugs.
+  const isRetiredMonth = (member, month) => {
+    if (!isRetired(member)) return false;
+    const match = member.frozen_since?.toString().match(/^(\d{4})-(\d{2})/);
+    if (!match) return true; // no leave date -> treat every month as retired
+    const retiredYear = Number(match[1]);
+    const retiredMonth = Number(match[2]); // 1-12
+    const monthIndex = MONTHS.indexOf(month) + 1; // 1-12
+    if (selectedYear > retiredYear) return true;
+    if (selectedYear < retiredYear) return false;
+    return monthIndex >= retiredMonth;
+  };
+
   const getMonthStatus = (member, month) => {
     const paid = hasPaidMonth(member.email, month);
+
+    if (paid) return "paid";
+    // From the leave date onward: neutral gray. Earlier months fall through to real history.
+    if (isRetiredMonth(member, month)) return "retired";
+
     const frozen = isMonthFrozen(member.id, month);
     const overdue = isMonthOverdue(month);
     const dueSoon = isMonthDueSoon(month);
 
-    if (paid) return "paid";
     if (frozen) return "frozen";
     if (overdue) return "overdue";
     if (dueSoon) return "due-soon";
@@ -246,9 +267,25 @@ function AllPayments() {
         frozen: frozenThisMonth,
         overdue: overdueThisMonth,
         dueSoon: dueSoonThisMonth,
+        retired: isRetiredMonth(member, selectedMonth),
       };
     }
   });
+
+  // Active member count for the header (retired members are excluded entirely)
+  const activeMembers = members.filter((m) => !isRetired(m));
+
+  // Month view: hide members already retired by the selected month
+  const monthViewMembers = filteredMembers.filter((m) => !m.retired);
+
+  // Year view: keep everyone (history), but push retired members to the bottom
+  const yearViewMembers = [...filteredMembers].sort(
+    (a, b) => (isRetired(a) ? 1 : 0) - (isRetired(b) ? 1 : 0)
+  );
+
+  // Header count: whole year -> active members; a specific month -> members present that month
+  const headerCount =
+    selectedMonth === "all" ? activeMembers.length : monthViewMembers.length;
 
   if (loading) {
     return (
@@ -264,7 +301,7 @@ function AllPayments() {
         <div>
           <h1 className="page-title">Estado de Pagos</h1>
           <p className="page-subtitle">
-            {members.length} {members.length === 1 ? "miembro" : "miembros"}
+            {headerCount} {headerCount === 1 ? "miembro" : "miembros"}
           </p>
         </div>
       </div>
@@ -305,15 +342,17 @@ function AllPayments() {
       {selectedMonth === "all" ? (
         // Year View - Show total payments per member
         <div className="payments-grid">
-          {filteredMembers.map((member, index) => (
+          {yearViewMembers.map((member, index) => (
             <div
               key={member.id}
-              className="payment-status-card fade-in"
+              className={`payment-status-card fade-in${isRetired(member) ? " retired" : ""}`}
               style={{ animationDelay: `${index * 0.05}s` }}
             >
               <div className="member-info-row">
                 <div>
-                  <h3 className="member-name-card">
+                  <h3
+                    className={`member-name-card${isRetired(member) ? " member-name-retired" : ""}`}
+                  >
                     {member.nombre} {member.apellido}
                   </h3>
                   <p className="member-email-card">{member.email}</p>
@@ -345,6 +384,8 @@ function AllPayments() {
                       title={`${month} - ${
                         status === "paid"
                           ? hasVoucher ? "Pagado — ver voucher" : "Pagado"
+                          : status === "retired"
+                          ? "Retirado"
                           : status === "frozen"
                           ? "Congelado"
                           : status === "overdue"
@@ -360,6 +401,7 @@ function AllPayments() {
                       }) : undefined}
                     >
                       {status === "paid" && "✓"}
+                      {status === "retired" && "—"}
                       {status === "frozen" && "❄️"}
                       {status === "overdue" && "✗"}
                       {status === "due-soon" && "!"}
@@ -379,19 +421,20 @@ function AllPayments() {
               Pagos de {selectedMonth} {selectedYear}
             </h2>
             <p>
-              {filteredMembers.filter((m) => m.paidThisMonth).length} de{" "}
-              {filteredMembers.filter((m) => !m.frozen).length} miembros pagaron
-              {filteredMembers.filter((m) => m.frozen).length > 0 && (
+              {monthViewMembers.filter((m) => m.paidThisMonth).length} de{" "}
+              {monthViewMembers.filter((m) => !m.frozen).length}{" "}
+              miembros pagaron
+              {monthViewMembers.filter((m) => m.frozen).length > 0 && (
                 <span>
                   {" "}
-                  ({filteredMembers.filter((m) => m.frozen).length} congelados)
+                  ({monthViewMembers.filter((m) => m.frozen).length} congelados)
                 </span>
               )}
             </p>
           </div>
 
           <div className="members-simple-grid">
-            {filteredMembers.map((member, index) => {
+            {monthViewMembers.map((member, index) => {
               // Determine the status class and text
               let statusClass = "pending";
               let statusText = "Pendiente";

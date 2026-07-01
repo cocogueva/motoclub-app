@@ -27,7 +27,12 @@ function Members() {
     }
   };
 
-  const filteredMembers = members.filter((member) => {
+  // Retired members ("Retirado") are kept in the DB for history but hidden here
+  const activeMembers = members.filter(
+    (member) => member.puesto?.toLowerCase() !== "retirado"
+  );
+
+  const filteredMembers = activeMembers.filter((member) => {
     const search = searchTerm.toLowerCase();
     return (
       member.nombre?.toLowerCase().includes(search) ||
@@ -50,8 +55,8 @@ function Members() {
       <div className="members-header">
         <h1 className="page-title">Miembros del Club</h1>
         <p className="page-subtitle">
-          {members.length} {members.length === 1 ? "miembro" : "miembros"}{" "}
-          registrados
+          {activeMembers.length}{" "}
+          {activeMembers.length === 1 ? "miembro" : "miembros"} registrados
         </p>
       </div>
 

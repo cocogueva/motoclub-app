@@ -11,8 +11,15 @@ const POSITIONS = [
   "Cap de Ruta",
   "Miembro",
   "Congelado",
+  "Retirado",
   "Prospecto",
 ];
+
+// Positions that exempt a member from dues (frozen_since is stamped for both)
+const isExemptPuesto = (puesto) => {
+  const p = puesto?.toLowerCase() || "";
+  return p.includes("congelado") || p.includes("retirado");
+};
 
 function Profile() {
   const [user, setUser] = useState(null);
@@ -126,11 +133,11 @@ function Profile() {
 
       const updateData = { ...formData, foto: photoUrl };
 
-      const becomingFrozen = formData.puesto?.toLowerCase().includes("congelado");
-      const wasFrozen = memberData.puesto?.toLowerCase().includes("congelado");
-      if (becomingFrozen && !wasFrozen) {
+      const becomingExempt = isExemptPuesto(formData.puesto);
+      const wasExempt = isExemptPuesto(memberData.puesto);
+      if (becomingExempt && !wasExempt) {
         updateData.frozen_since = new Date().toISOString();
-      } else if (!becomingFrozen && wasFrozen) {
+      } else if (!becomingExempt && wasExempt) {
         updateData.frozen_since = null;
       }
 

@@ -98,6 +98,15 @@
   color: var(--color-white);
 }
 
+/* Retired member: greyed-out name, card pushed to the bottom of the grid */
+.payment-status-card.retired {
+  opacity: 0.7;
+}
+
+.member-name-card.member-name-retired {
+  color: var(--color-exhaust);
+}
+
 .member-email-card {
   font-size: 0.813rem;
   color: var(--color-exhaust);
@@ -198,6 +207,14 @@
   font-size: 0.875rem;
 }
 
+/* RETIRED - Neutral grey: former member, no dues expected this month */
+.month-indicator.status-retired {
+  background: var(--color-steel);
+  border-color: var(--color-exhaust);
+  color: var(--color-exhaust);
+  opacity: 0.5;
+}
+
 /* Hover states for month indicators */
 .month-indicator.status-paid:hover {
   background: rgba(46, 204, 113, 0.3);
@@ -221,6 +238,11 @@
 
 .month-indicator.status-frozen:hover {
   background: rgba(52, 152, 219, 0.3);
+  transform: scale(1.05);
+}
+
+.month-indicator.status-retired:hover {
+  opacity: 0.7;
   transform: scale(1.05);
 }
 
@@ -322,6 +344,29 @@
 
 .member-simple-card.frozen:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* --------------------------------------------------------------------------
+   RETIRED (Retirado) - Neutral grey
+   Card style for former members; no dues expected
+   -------------------------------------------------------------------------- */
+.member-simple-card.retired {
+  border-left: 4px solid var(--color-exhaust);
+  opacity: 0.55;
+}
+
+.member-simple-card.retired:hover {
+  opacity: 0.75;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.member-simple-card.retired .status-indicator {
+  background: var(--color-steel);
+  color: var(--color-exhaust);
+}
+
+.member-simple-card.retired .status-text {
+  color: var(--color-exhaust);
 }
 
 /* --------------------------------------------------------------------------

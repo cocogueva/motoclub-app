@@ -42,10 +42,11 @@ function Dashboard() {
 
       const currentYear = new Date().getFullYear();
 
-      // Get total members
+      // Get total members (exclude retired; keep null-puesto rows counted)
       const { count: membersCount } = await supabase
         .from("members")
-        .select("*", { count: "exact", head: true });
+        .select("*", { count: "exact", head: true })
+        .or("puesto.is.null,puesto.neq.Retirado");
 
       // Get total collected this year (only cuotas)
       // Use applies_to_month and applies_to_year to identify cuotas
