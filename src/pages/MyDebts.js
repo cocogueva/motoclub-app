@@ -15,7 +15,6 @@ function MyDebts() {
   const [customDebts, setCustomDebts] = useState([]);
   const [moraDebt, setMoraDebt] = useState(null);
   const [moraBreakdown, setMoraBreakdown] = useState([]);
-  const [memberId, setMemberId] = useState(null);
   const [filter, setFilter] = useState("pending");
   const [selectedDebt, setSelectedDebt] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -46,7 +45,6 @@ function MyDebts() {
         setLoading(false);
         return;
       }
-      setMemberId(memberData.id);
 
       // Custom debts (mora records are read through mora_summary below)
       const { data: customData, error: debtsError } = await supabase
@@ -149,18 +147,6 @@ function MyDebts() {
 
       const { data: { user } } = await supabase.auth.getUser();
 
-      // First mora payment: create the mora record the payment links to
-      let debtId = selectedDebt.id;
-      if (selectedDebt.isMora && !debtId) {
-        const { data: newMora, error: moraError } = await supabase
-          .from("member_debts")
-          .insert([{ member_id: memberId, debt_type: "mora", total_paid: 0, status: "pending" }])
-          .select()
-          .single();
-        if (moraError) throw moraError;
-        debtId = newMora.id;
-      }
-
       const fileExt = voucherFile.name.split(".").pop();
       const fileName = `${user.id}_${Date.now()}.${fileExt}`;
       const filePath = `vouchers/${fileName}`;
@@ -175,39 +161,17 @@ function MyDebts() {
         .from("payments")
         .getPublicUrl(filePath);
 
-      const { error: paymentError } = await supabase
-        .from("payments")
-        .insert([{
-          member_id: memberId,
-          email_registro: user.email,
-          fecha: new Date().toISOString(),
-          monto: amount,
-          payment_type: selectedDebt.isMora ? "mora" : "deuda",
-          concept: selectedDebt.isMora ? "Mora" : selectedDebt.description,
-          voucher: publicUrl,
-          debt_id: debtId,
-          comentario: selectedDebt.isMora
-            ? "Pago de mora"
-            : `Pago deuda: ${selectedDebt.description}`,
-        }]);
+      // Inserts the payment and updates total_paid in one transaction
+      // (pay_mora also creates the mora record on the first payment)
+      const { error: paymentError } = selectedDebt.isMora
+        ? await supabase.rpc("pay_mora", { p_amount: amount, p_voucher: publicUrl })
+        : await supabase.rpc("pay_debt", {
+            p_debt_id: selectedDebt.id,
+            p_amount: amount,
+            p_voucher: publicUrl,
+          });
 
       if (paymentError) throw paymentError;
-
-      const newTotalPaid = (selectedDebt.total_paid || 0) + amount;
-      const newBalance = selectedDebt.isMora
-        ? (selectedDebt.computedTotal || 0) - newTotalPaid
-        : (selectedDebt.amount || 0) - newTotalPaid;
-
-      const { error: updateError } = await supabase
-        .from("member_debts")
-        .update({
-          total_paid: newTotalPaid,
-          status: newBalance <= 0 ? "paid" : "pending",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", debtId);
-
-      if (updateError) throw updateError;
 
       setMessage("¡Pago registrado exitosamente!");
       setShowPaymentModal(false);

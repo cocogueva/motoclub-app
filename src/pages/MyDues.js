@@ -147,14 +147,6 @@ function MyDues() {
         data: { user },
       } = await supabase.auth.getUser();
 
-      const { data: memberData } = await supabase
-        .from("members")
-        .select("id")
-        .eq("email", user.email)
-        .single();
-
-      if (!memberData) throw new Error("Miembro no encontrado");
-
       const fileExt = voucherFile.name.split(".").pop();
       const fileName = `${user.id}_${Date.now()}.${fileExt}`;
       const filePath = `vouchers/${fileName}`;
@@ -169,41 +161,13 @@ function MyDues() {
         data: { publicUrl },
       } = supabase.storage.from("payments").getPublicUrl(filePath);
 
-      const { data: paymentData, error: paymentError } = await supabase
-        .from("payments")
-        .insert([
-          {
-            member_id: memberData.id,
-            fecha: new Date().toISOString(),
-            monto: selectedDue.amount,
-            mes_pagado: MONTHS[selectedDue.month - 1],
-            voucher: publicUrl,
-            email_registro: user.email,
-            comentario: `Cuota ${MONTHS[selectedDue.month - 1]} ${
-              selectedDue.year
-            }`,
-            tipo_ingreso: "Cuota",
-            payment_type: "cuota_mensual",
-            applies_to_year: selectedDue.year,
-            applies_to_month: selectedDue.month,
-          },
-        ])
-        .select()
-        .single();
+      // Inserts the payment and marks the due paid in one transaction
+      const { error: paymentError } = await supabase.rpc("pay_cuota", {
+        p_due_id: selectedDue.id,
+        p_voucher: publicUrl,
+      });
 
       if (paymentError) throw paymentError;
-
-      const { data: updateData, error: updateError } = await supabase
-        .from("monthly_dues")
-        .update({
-          status: "paid",
-          paid_date: new Date().toISOString(),
-          payment_id: paymentData.id,
-        })
-        .eq("id", selectedDue.id)
-        .select();
-
-      if (updateError) throw updateError;
 
       setMessage("¡Pago registrado exitosamente!");
       setVoucherFile(null);
