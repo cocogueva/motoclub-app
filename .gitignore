@@ -23,3 +23,6 @@ CLAUDE.md
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Local SQL scripts (run manually in Supabase, not deployed)
+sql/
