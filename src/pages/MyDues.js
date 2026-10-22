@@ -81,7 +81,7 @@ function MyDues() {
 
       const { data: memberData } = await supabase
         .from("members")
-        .select("id, puesto, frozen_since")
+        .select("id")
         .eq("email", user.email)
         .single();
 
@@ -90,37 +90,7 @@ function MyDues() {
         return;
       }
 
-      // Auto-freeze logic: if member is frozen, mark overdue dues as frozen
-      const isFrozen = memberData.puesto?.toLowerCase().includes("congelado");
-      const frozenSince = memberData.frozen_since ? new Date(memberData.frozen_since) : null;
-
-      if (isFrozen && frozenSince) {
-        // Find overdue dues that should be frozen (month >= frozen_since, not already frozen)
-        const { data: overdueDues } = await supabase
-          .from("monthly_dues")
-          .select("*")
-          .eq("member_id", memberData.id)
-          .eq("status", "overdue")
-          .or("is_frozen.is.null,is_frozen.eq.false");
-
-        if (overdueDues && overdueDues.length > 0) {
-          // Filter dues where month is on or after frozen_since
-          const duesToFreeze = overdueDues.filter((due) => {
-            const dueMonth = new Date(due.year, due.month - 1, 1);
-            return dueMonth >= frozenSince;
-          });
-
-          // Update those dues to is_frozen = true
-          if (duesToFreeze.length > 0) {
-            const idsToFreeze = duesToFreeze.map((d) => d.id);
-            await supabase
-              .from("monthly_dues")
-              .update({ is_frozen: true })
-              .in("id", idsToFreeze);
-          }
-        }
-      }
-
+      // Freezing is done in the DB (trigger on puesto change + daily cron)
       const { data: duesData, error } = await supabase
         .from("monthly_dues")
         .select("*")

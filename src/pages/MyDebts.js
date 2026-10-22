@@ -7,7 +7,8 @@ const MONTHS = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
 
-const DAILY_MORA_RATE = 1.5;
+// Fallback only; the real rate per year comes from dues_config.daily_mora_rate
+const DEFAULT_MORA_RATE = 1.5;
 
 const STATUS_LABELS = { paid: "Pagado", waived: "Condonado" };
 const statusLabel = (status) => STATUS_LABELS[status] || "Pendiente";
@@ -31,6 +32,7 @@ function MyDebts() {
   const [customDebts, setCustomDebts] = useState([]);
   const [moraDebt, setMoraDebt] = useState(null);
   const [moraBreakdown, setMoraBreakdown] = useState([]);
+  const [moraRate, setMoraRate] = useState(DEFAULT_MORA_RATE);
   const [filter, setFilter] = useState("pending");
   const [selectedDebt, setSelectedDebt] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -94,12 +96,22 @@ function MyDebts() {
         return false;
       });
 
+      // Mora rate per year from dues_config
+      const { data: configs } = await supabase
+        .from("dues_config")
+        .select("year, daily_mora_rate");
+      const rateByYear = Object.fromEntries(
+        (configs || []).map((c) => [c.year, Number(c.daily_mora_rate)])
+      );
+      const rateFor = (year) => rateByYear[year] ?? DEFAULT_MORA_RATE;
+      setMoraRate(rateFor(new Date().getFullYear()));
+
       const breakdown = moraDues
         .map((due) => ({
           month: MONTHS[due.month - 1],
           year: due.year,
           days: computeMoraDays(due),
-          amount: computeMoraDays(due) * DAILY_MORA_RATE,
+          amount: computeMoraDays(due) * rateFor(due.year),
           isAccruing: due.status === "overdue",
         }))
         .filter((b) => b.days > 0);
@@ -305,7 +317,7 @@ function MyDebts() {
             <div>
               <h3 className="debt-title">Mora</h3>
               <p className="debt-subtitle">
-                S/. {DAILY_MORA_RATE} por día de retraso
+                S/. {moraRate} por día de retraso
               </p>
             </div>
             <span className={`debt-status-badge ${moraDebt.status}`}>

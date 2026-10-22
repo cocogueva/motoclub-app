@@ -32,15 +32,9 @@ function AllPayments() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear]);
 
-  const autoFreezeCongelados = async () => {
-    await supabase.rpc("freeze_congelado_dues");
-  };
-
   const loadData = async () => {
     try {
       setLoading(true);
-
-      await autoFreezeCongelados();
 
       // Load all members
       const { data: membersData, error: membersError } = await supabase

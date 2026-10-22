@@ -15,12 +15,6 @@ const POSITIONS = [
   "Prospecto",
 ];
 
-// Positions that exempt a member from dues (frozen_since is stamped for both)
-const isExemptPuesto = (puesto) => {
-  const p = puesto?.toLowerCase() || "";
-  return p.includes("congelado") || p.includes("retirado");
-};
-
 function Profile() {
   const [user, setUser] = useState(null);
   const [memberData, setMemberData] = useState(null);
@@ -133,23 +127,19 @@ function Profile() {
 
       const updateData = { ...formData, foto: photoUrl };
 
-      const becomingExempt = isExemptPuesto(formData.puesto);
-      const wasExempt = isExemptPuesto(memberData.puesto);
-      if (becomingExempt && !wasExempt) {
-        updateData.frozen_since = new Date().toISOString();
-      } else if (!becomingExempt && wasExempt) {
-        updateData.frozen_since = null;
-      }
-
-      const { error } = await supabase
+      // frozen_since and freezing the dues are handled by DB triggers on puesto
+      // change (members_stamp_frozen_since / members_sync_dues_freeze)
+      const { data: updated, error } = await supabase
         .from("members")
         .update(updateData)
-        .eq("email", user.email);
+        .eq("email", user.email)
+        .select()
+        .single();
 
       if (error) throw error;
 
-      setMemberData(updateData);
-      setFormData(updateData);
+      setMemberData(updated);
+      setFormData(updated);
       setEditing(false);
       setPhotoFile(null);
       setPhotoPreview(null);
