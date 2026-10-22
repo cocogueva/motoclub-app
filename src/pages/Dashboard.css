@@ -215,6 +215,12 @@
   overflow: hidden;
 }
 
+/* External links (e.g. Actas) use the same card as the buttons */
+a.action-card {
+  text-decoration: none;
+  color: inherit;
+}
+
 .action-card::before {
   content: "";
   position: absolute;

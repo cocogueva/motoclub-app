@@ -3,6 +3,11 @@ import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 
+// Andrés' NotebookLM notebook with all the actas de asamblea (opens outside the app;
+// members need the notebook shared with them / "anyone with the link")
+const ACTAS_NOTEBOOK_URL =
+  "https://notebook.google.com/notebook/059de656-6053-4eb4-b9b0-86a2aaebdba0";
+
 // Helper function to parse date string as local date (not UTC)
 const parseLocalDate = (dateString) => {
   if (!dateString) return null;
@@ -228,6 +233,16 @@ function Dashboard() {
             <span className="action-icon">⚙️</span>
             <span className="action-label">Mi Perfil</span>
           </button>
+
+          <a
+            className="action-card"
+            href={ACTAS_NOTEBOOK_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span className="action-icon">📜</span>
+            <span className="action-label">IA Actas ↗</span>
+          </a>
         </div>
       </div>
     </div>
