@@ -9,6 +9,9 @@ const MONTHS = [
 
 const DAILY_MORA_RATE = 1.5;
 
+const STATUS_LABELS = { paid: "Pagado", waived: "Condonado" };
+const statusLabel = (status) => STATUS_LABELS[status] || "Pendiente";
+
 const computeMoraDays = (due) => {
   if (due.is_frozen) return 0;
 
@@ -64,6 +67,7 @@ function MyDebts() {
         .from("member_debts")
         .select("*")
         .eq("member_id", memberData.id)
+        .neq("status", "rolled_over") // mora records closed by the year-end rollover
         .order("created_at", { ascending: false });
 
       if (debtsError) throw debtsError;
@@ -76,6 +80,7 @@ function MyDebts() {
         .from("monthly_dues")
         .select("*")
         .eq("member_id", memberData.id)
+        .is("rolled_over_at", null) // closed years: mora already moved to a custom debt
         .or("status.eq.overdue,status.eq.paid")
         .order("year", { ascending: true })
         .order("month", { ascending: true });
@@ -117,15 +122,17 @@ function MyDebts() {
         setMoraDebt({ ...newMora, computedTotal: totalMora });
       } else if (mora) {
         const moraBalance = totalMora - (mora.total_paid || 0);
-        if (moraBalance <= 0 && mora.status !== "paid") {
+        // Sync status both ways: a paid mora reopens if new late dues add to it.
+        // Waived records are left alone.
+        const syncedStatus =
+          mora.status === "waived" ? "waived" : moraBalance <= 0 ? "paid" : "pending";
+        if (syncedStatus !== mora.status) {
           await supabase
             .from("member_debts")
-            .update({ status: "paid" })
+            .update({ status: syncedStatus })
             .eq("id", mora.id);
-          setMoraDebt({ ...mora, status: "paid", computedTotal: totalMora });
-        } else {
-          setMoraDebt({ ...mora, computedTotal: totalMora });
         }
+        setMoraDebt({ ...mora, status: syncedStatus, computedTotal: totalMora });
       }
 
       setMoraBreakdown(breakdown);
@@ -302,7 +309,7 @@ function MyDebts() {
               </p>
             </div>
             <span className={`debt-status-badge ${moraDebt.status}`}>
-              {moraDebt.status === "paid" ? "Pagado" : "Pendiente"}
+              {statusLabel(moraDebt.status)}
             </span>
           </div>
 
@@ -360,7 +367,7 @@ function MyDebts() {
             <div className="debt-card-header">
               <h3 className="debt-title">{debt.description}</h3>
               <span className={`debt-status-badge ${debt.status}`}>
-                {debt.status === "paid" ? "Pagado" : "Pendiente"}
+                {statusLabel(debt.status)}
               </span>
             </div>
 

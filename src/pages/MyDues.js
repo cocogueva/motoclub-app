@@ -65,6 +65,8 @@ function MyDues() {
       ? dues.filter((due) => {
           // Include frozen dues when "paid" filter is selected
           if (due.is_frozen && statusFilter.includes("paid")) return true;
+          // Rolled-over dues were overdue; show them under "Vencido"
+          if (due.status === "rolled_over" && statusFilter.includes("overdue")) return true;
           return statusFilter.includes(due.status);
         })
       : dues;
@@ -259,6 +261,9 @@ function MyDues() {
     } else if (due.is_frozen) {
       // Check is_frozen directly from the database
       return { text: "Congelado", className: "status-frozen", icon: "❄️" };
+    } else if (due.status === "rolled_over") {
+      // Moved to a "Cuotas pendientes YYYY" debt by the year-end rollover
+      return { text: "Trasladado a Mis Deudas", className: "status-rolled", icon: "📋" };
     } else if (due.status === "overdue" || daysUntilDue < 0) {
       return {
         text: `Vencido (${Math.abs(daysUntilDue)} días)`,
@@ -277,7 +282,7 @@ function MyDues() {
   };
 
   const totalDue = dues
-    .filter((d) => d.status !== "paid" && !d.is_frozen)
+    .filter((d) => d.status !== "paid" && d.status !== "rolled_over" && !d.is_frozen)
     .reduce((sum, d) => sum + parseFloat(d.amount), 0);
   const totalPaid = dues
     .filter((d) => d.status === "paid")
@@ -342,7 +347,7 @@ function MyDues() {
           }`}
           onClick={() => toggleStatusFilter("overdue")}
         >
-          🔴 Vencido ({dues.filter((d) => d.status === "overdue" && !d.is_frozen).length})
+          🔴 Vencido ({dues.filter((d) => (d.status === "overdue" || d.status === "rolled_over") && !d.is_frozen).length})
         </button>
         <button
           className={`filter-chip ${
@@ -502,7 +507,9 @@ function MyDues() {
                 )}
               </div>
 
-              {due.status !== "paid" && statusInfo.className !== "status-frozen" && (
+              {due.status !== "paid" &&
+                due.status !== "rolled_over" &&
+                statusInfo.className !== "status-frozen" && (
                 <button
                   className="btn btn-pay"
                   onClick={() => handlePayDue(due)}

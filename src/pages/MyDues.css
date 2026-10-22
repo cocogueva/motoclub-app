@@ -203,6 +203,10 @@
   background: #3498db;
 }
 
+.due-card.status-rolled::before {
+  background: #95a5a6;
+}
+
 .due-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
@@ -307,6 +311,12 @@
   background: rgba(52, 152, 219, 0.1);
   color: #3498db;
   border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+.status-badge.status-rolled {
+  background: rgba(149, 165, 166, 0.1);
+  color: #95a5a6;
+  border: 1px solid rgba(149, 165, 166, 0.3);
 }
 
 /* Pay Button */
