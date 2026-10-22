@@ -19,8 +19,7 @@ const MONTHS = [
 
 function AllPayments() {
   const [members, setMembers] = useState([]);
-  const [payments, setPayments] = useState([]);
-  const [monthlyDues, setMonthlyDues] = useState([]);
+  const [dues, setDues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState("all");
@@ -39,44 +38,31 @@ function AllPayments() {
       // Load all members
       const { data: membersData, error: membersError } = await supabase
         .from("members")
-        .select("id, nombre, apellido, email, puesto, frozen_since")
+        .select("id, nombre, apellido, email, puesto")
         .order("nombre");
 
       if (membersError) throw membersError;
 
-      // Load all payments
-      const { data: paymentsData, error: paymentsError } = await supabase
-        .from("payments")
-        .select("*")
-        .gte("fecha", `${selectedYear}-01-01`)
-        .lte("fecha", `${selectedYear}-12-31`)
-        .order("fecha", { ascending: false });
-
-      if (paymentsError) throw paymentsError;
-
-      // Load all monthly dues for the selected year (to check is_frozen)
+      // Dues of the selected year with their display status, computed in SQL
+      // (dues_status view: paid / retired / frozen / overdue / due-soon / pending)
       const { data: duesData, error: duesError } = await supabase
-        .from("monthly_dues")
-        .select("member_id, month, year, is_frozen")
+        .from("dues_status")
+        .select("member_id, month, amount, paid_amount, voucher, display_status")
         .eq("year", selectedYear);
 
       if (duesError) throw duesError;
 
-      // Get available years from payments
-      const { data: allPayments } = await supabase
-        .from("payments")
-        .select("fecha")
-        .order("fecha", { ascending: false });
+      // Available years = years that have dues
+      const { data: yearsData } = await supabase
+        .from("monthly_dues")
+        .select("year");
 
-      const years = [
-        ...new Set(
-          allPayments?.map((p) => new Date(p.fecha).getFullYear()) || []
-        ),
-      ].sort((a, b) => b - a);
+      const years = [...new Set((yearsData || []).map((d) => d.year))].sort(
+        (a, b) => b - a
+      );
 
       setMembers(membersData || []);
-      setPayments(paymentsData || []);
-      setMonthlyDues(duesData || []);
+      setDues(duesData || []);
       setAvailableYears(years);
     } catch (error) {
       console.error("Error loading data:", error);
@@ -85,185 +71,40 @@ function AllPayments() {
     }
   };
 
-  const getMemberPayments = (memberEmail) => {
-    return payments.filter((p) => p.email_registro === memberEmail);
-  };
-
-  const getPaymentForMonth = (memberEmail, month) => {
-    const currentYear = selectedYear;
-    const currentMonth = MONTHS.indexOf(month) + 1;
-
-    return payments.find((p) => {
-      const isCuota = p.payment_type === "cuota_mensual" || p.applies_to_month;
-      if (!isCuota) return false;
-
-      if (p.applies_to_month && p.applies_to_year) {
-        return (
-          p.email_registro === memberEmail &&
-          p.applies_to_month === currentMonth &&
-          p.applies_to_year === currentYear
-        );
-      }
-
-      if (p.mes_pagado && !p.mes_pagado.toLowerCase().includes("mora")) {
-        const paymentYear = new Date(p.fecha).getFullYear();
-        return (
-          p.email_registro === memberEmail &&
-          p.mes_pagado.toLowerCase().includes(month.toLowerCase()) &&
-          paymentYear === currentYear
-        );
-      }
-
-      return false;
-    });
-  };
-
-  const isMonthFrozen = (memberId, month) => {
-    const monthIndex = MONTHS.indexOf(month) + 1; // 1-12
-    const due = monthlyDues.find(
-      (d) =>
-        d.member_id === memberId &&
-        d.month === monthIndex &&
-        d.year === selectedYear
-    );
-    return due?.is_frozen || false;
-  };
-
-  const hasPaidMonth = (memberEmail, month) => {
-    const currentYear = selectedYear;
-    const currentMonth = MONTHS.indexOf(month) + 1; // 1-12
-
-    return payments.some((p) => {
-      // Only consider cuota payments (not "Mora" or other concepts)
-      const isCuota = p.payment_type === "cuota_mensual" || p.applies_to_month;
-
-      if (!isCuota) return false;
-
-      // Match by applies_to_month and applies_to_year (most reliable)
-      if (p.applies_to_month && p.applies_to_year) {
-        return (
-          p.email_registro === memberEmail &&
-          p.applies_to_month === currentMonth &&
-          p.applies_to_year === currentYear
-        );
-      }
-
-      // Fallback: match by mes_pagado string (for old payments)
-      // But exclude payments with "Mora" or other non-month words
-      if (p.mes_pagado && !p.mes_pagado.toLowerCase().includes("mora")) {
-        const paymentYear = new Date(p.fecha).getFullYear();
-        return (
-          p.email_registro === memberEmail &&
-          p.mes_pagado.toLowerCase().includes(month.toLowerCase()) &&
-          paymentYear === currentYear
-        );
-      }
-
-      return false;
-    });
-  };
-
-  const isMonthOverdue = (month) => {
-    const currentDate = new Date();
-    const currentYear = selectedYear;
-    const monthIndex = MONTHS.indexOf(month);
-    // Overdue starts on day 7 (day 6 is still OK to pay)
-    const overdueDate = new Date(currentYear, monthIndex, 7);
-    overdueDate.setHours(0, 0, 0, 0);
-
-    return currentDate >= overdueDate;
-  };
-
-  const isMonthDueSoon = (month) => {
-    const currentDate = new Date();
-    const currentYear = selectedYear;
-    const monthIndex = MONTHS.indexOf(month);
-    const dueDate = new Date(currentYear, monthIndex, 6); // 6th of the month
-    dueDate.setHours(23, 59, 59, 999); // End of day 6
-    const daysUntilDue = Math.ceil(
-      (dueDate - currentDate) / (1000 * 60 * 60 * 24)
-    );
-
-    // Due soon: within 10 days of due date, including the due date itself
-    return daysUntilDue <= 10 && daysUntilDue >= 0;
-  };
-
   const isRetired = (member) => member.puesto?.toLowerCase() === "retirado";
 
-  // True when `month` (of selectedYear) falls on or after the member's leave date.
-  // Months before the leave date keep their real history (paid/congelado/vencido).
-  // Parses the YYYY-MM directly from frozen_since to avoid UTC-offset bugs.
-  const isRetiredMonth = (member, month) => {
-    if (!isRetired(member)) return false;
-    const match = member.frozen_since?.toString().match(/^(\d{4})-(\d{2})/);
-    if (!match) return true; // no leave date -> treat every month as retired
-    const retiredYear = Number(match[1]);
-    const retiredMonth = Number(match[2]); // 1-12
+  const getDue = (member, month) => {
     const monthIndex = MONTHS.indexOf(month) + 1; // 1-12
-    if (selectedYear > retiredYear) return true;
-    if (selectedYear < retiredYear) return false;
-    return monthIndex >= retiredMonth;
+    return dues.find((d) => d.member_id === member.id && d.month === monthIndex);
   };
 
-  const getMonthStatus = (member, month) => {
-    const paid = hasPaidMonth(member.email, month);
-
-    if (paid) return "paid";
-    // From the leave date onward: neutral gray. Earlier months fall through to real history.
-    if (isRetiredMonth(member, month)) return "retired";
-
-    const frozen = isMonthFrozen(member.id, month);
-    const overdue = isMonthOverdue(month);
-    const dueSoon = isMonthDueSoon(month);
-
-    if (frozen) return "frozen";
-    if (overdue) return "overdue";
-    if (dueSoon) return "due-soon";
-    return "pending";
-  };
-
-  const getTotalPaidByMember = (memberEmail) => {
-    const memberPayments = getMemberPayments(memberEmail);
-    // Only sum cuota_mensual payments
-    return memberPayments.reduce((sum, p) => {
-      const isCuota =
-        p.payment_type === "cuota_mensual" ||
-        (p.applies_to_month && p.applies_to_year);
-      return isCuota ? sum + (p.monto || 0) : sum;
-    }, 0);
-  };
+  // A month with no due row: retired members (no dues after leaving) show as
+  // retired, anyone else as "none" (no cuota that month)
+  const getMonthStatus = (member, month) =>
+    getDue(member, month)?.display_status || (isRetired(member) ? "retired" : "none");
 
   const filteredMembers = members.map((member) => {
-    const memberPayments = getMemberPayments(member.email);
-    const totalPaid = getTotalPaidByMember(member.email);
-
-    // Only count cuota payments
-    const cuotaPayments = memberPayments.filter(
-      (p) =>
-        p.payment_type === "cuota_mensual" ||
-        (p.applies_to_month && p.applies_to_year)
+    const paidDues = dues.filter(
+      (d) => d.member_id === member.id && d.display_status === "paid"
+    );
+    const totalPaid = paidDues.reduce(
+      (sum, d) => sum + Number(d.paid_amount ?? d.amount ?? 0),
+      0
     );
 
     if (selectedMonth === "all") {
-      return { ...member, totalPaid, paymentsCount: cuotaPayments.length };
-    } else {
-      const paidThisMonth = hasPaidMonth(member.email, selectedMonth);
-      // Check if this specific month is frozen from the database
-      const frozenThisMonth = isMonthFrozen(member.id, selectedMonth);
-      // Check if this month is overdue (past the 6th)
-      const overdueThisMonth = isMonthOverdue(selectedMonth);
-      // Check if this month is due soon (within 10 days)
-      const dueSoonThisMonth = isMonthDueSoon(selectedMonth);
-      return {
-        ...member,
-        totalPaid,
-        paidThisMonth,
-        frozen: frozenThisMonth,
-        overdue: overdueThisMonth,
-        dueSoon: dueSoonThisMonth,
-        retired: isRetiredMonth(member, selectedMonth),
-      };
+      return { ...member, totalPaid, paymentsCount: paidDues.length };
     }
+    const status = getMonthStatus(member, selectedMonth);
+    return {
+      ...member,
+      totalPaid,
+      monthStatus: status,
+      paidThisMonth: status === "paid",
+      frozen: status === "frozen",
+      // Month view hides members who weren't in the club that month
+      retired: status === "retired" || status === "none",
+    };
   });
 
   // Active member count for the header (retired members are excluded entirely)
@@ -369,17 +210,19 @@ function AllPayments() {
               <div className="month-indicators">
                 {MONTHS.map((month) => {
                   const status = getMonthStatus(member, month);
-                  const payment = status === "paid" ? getPaymentForMonth(member.email, month) : null;
+                  const payment = status === "paid" ? getDue(member, month) : null;
                   const hasVoucher = payment?.voucher;
                   return (
                     <div
                       key={month}
-                      className={`month-indicator status-${status}${hasVoucher ? " has-voucher" : ""}`}
+                      className={`month-indicator status-${status === "none" ? "retired" : status}${hasVoucher ? " has-voucher" : ""}`}
                       title={`${month} - ${
                         status === "paid"
                           ? hasVoucher ? "Pagado — ver voucher" : "Pagado"
                           : status === "retired"
                           ? "Retirado"
+                          : status === "none"
+                          ? "Sin cuota"
                           : status === "frozen"
                           ? "Congelado"
                           : status === "overdue"
@@ -395,7 +238,7 @@ function AllPayments() {
                       }) : undefined}
                     >
                       {status === "paid" && "✓"}
-                      {status === "retired" && "—"}
+                      {(status === "retired" || status === "none") && "—"}
                       {status === "frozen" && "❄️"}
                       {status === "overdue" && "✗"}
                       {status === "due-soon" && "!"}
@@ -434,26 +277,26 @@ function AllPayments() {
               let statusText = "Pendiente";
               let statusIcon = "✗";
 
-              if (member.paidThisMonth) {
+              if (member.monthStatus === "paid") {
                 statusClass = "paid";
                 statusText = "Pagado";
                 statusIcon = "✓";
-              } else if (member.frozen) {
+              } else if (member.monthStatus === "frozen") {
                 statusClass = "frozen";
                 statusText = "Congelado";
                 statusIcon = "❄️";
-              } else if (member.overdue) {
+              } else if (member.monthStatus === "overdue") {
                 statusClass = "overdue";
                 statusText = "Vencido";
                 statusIcon = "✗";
-              } else if (member.dueSoon) {
+              } else if (member.monthStatus === "due-soon") {
                 statusClass = "due-soon";
                 statusText = "Vence pronto";
                 statusIcon = "!";
               }
 
               const monthPayment = member.paidThisMonth
-                ? getPaymentForMonth(member.email, selectedMonth)
+                ? getDue(member, selectedMonth)
                 : null;
               const monthHasVoucher = monthPayment?.voucher;
 
