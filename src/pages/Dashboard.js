@@ -127,7 +127,7 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <div className="dashboard-loading">
+      <div className="page-loading">
         <div className="loading-spinner"></div>
       </div>
     );
@@ -142,7 +142,7 @@ function Dashboard() {
           )}
           <div>
             <p className="dashboard-welcome">
-              Bienvenido, <span className="text-spark">{memberNickname}</span>
+              Bienvenido, <span className="text-primary">{memberNickname}</span>
             </p>
             <p className="dashboard-welcome-email">{user?.email}</p>
           </div>

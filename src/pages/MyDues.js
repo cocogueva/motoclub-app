@@ -224,7 +224,7 @@ function MyDues() {
 
   if (loading) {
     return (
-      <div className="my-dues-loading">
+      <div className="page-loading">
         <div className="loading-spinner"></div>
       </div>
     );

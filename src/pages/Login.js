@@ -57,7 +57,7 @@ function Login() {
 
         <form onSubmit={handleLogin} className="login-form">
           <div className="form-group">
-            <label htmlFor="email" className="form-label">
+            <label htmlFor="email">
               Email
             </label>
             <input
@@ -68,12 +68,11 @@ function Login() {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading}
-              className="form-input"
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="password" className="form-label">
+            <label htmlFor="password">
               Contraseña
             </label>
             <input
@@ -84,7 +83,6 @@ function Login() {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
-              className="form-input"
             />
           </div>
 

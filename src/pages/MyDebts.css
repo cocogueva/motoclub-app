@@ -1,19 +1,13 @@
+/* MyDebts: modal, filter chips, badges, messages live in styles/shared.css */
+
 .debts-page {
   animation: fadeIn 0.5s ease;
-}
-
-.debts-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
 }
 
 .debts-header {
   margin-bottom: 2rem;
 }
 
-/* Filters */
 .debts-filters {
   display: flex;
   gap: 0.75rem;
@@ -24,46 +18,22 @@
   border: 2px solid var(--color-steel);
 }
 
-.filter-chip {
-  padding: 0.5rem 1rem;
-  border: 2px solid var(--color-steel);
-  background: transparent;
-  color: var(--color-fog);
-  font-size: 0.813rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: var(--font-body);
-  border-radius: 20px;
-  white-space: nowrap;
+/* Debt status tones (card accent + badge) */
+.debt-card.pending,
+.debt-status-badge.pending {
+  --tone: var(--color-danger-rgb);
 }
 
-.filter-chip:hover {
-  border-color: var(--color-primary);
-  background: rgba(232, 220, 197, 0.1);
+.debt-card.paid,
+.debt-status-badge.paid {
+  --tone: var(--color-success-rgb);
 }
 
-.filter-chip.active {
-  color: var(--color-white);
-  transform: scale(1.05);
+.debt-status-badge.waived {
+  --tone: var(--color-muted-rgb);
 }
 
-.filter-chip.active.pending {
-  background: rgba(231, 76, 60, 0.15);
-  border-color: #e74c3c;
-}
-
-.filter-chip.active.paid {
-  background: rgba(46, 204, 113, 0.15);
-  border-color: #2ecc71;
-}
-
-.filter-chip.active.all {
-  background: rgba(232, 220, 197, 0.15);
-  border-color: var(--color-primary);
-}
-
-/* Debt Cards */
+/* Debt cards */
 .debt-card {
   background: var(--color-chrome);
   border: 2px solid var(--color-steel);
@@ -83,14 +53,7 @@
   top: 0;
   bottom: 0;
   width: 4px;
-}
-
-.debt-card.pending::before {
-  background: #e74c3c;
-}
-
-.debt-card.paid::before {
-  background: #2ecc71;
+  background: rgb(var(--tone));
 }
 
 .debt-card:hover {
@@ -98,16 +61,14 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
-/* Mora card accent */
 .mora-card {
   border-color: var(--color-primary);
 }
 
-.mora-card.pending::before {
-  background: var(--color-primary);
+.mora-card.pending {
+  --tone: var(--color-primary-rgb);
 }
 
-/* Card Header */
 .debt-card-header {
   display: flex;
   justify-content: space-between;
@@ -137,37 +98,13 @@
   font-style: italic;
 }
 
-/* Status Badge */
+/* Badge (base pill + tone in shared.css) */
 .debt-status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
   white-space: nowrap;
   flex-shrink: 0;
 }
 
-.debt-status-badge.pending {
-  background: rgba(231, 76, 60, 0.1);
-  color: #e74c3c;
-  border: 1px solid rgba(231, 76, 60, 0.3);
-}
-
-.debt-status-badge.paid {
-  background: rgba(46, 204, 113, 0.1);
-  color: #2ecc71;
-  border: 1px solid rgba(46, 204, 113, 0.3);
-}
-
-.debt-status-badge.waived {
-  background: rgba(149, 165, 166, 0.1);
-  color: #95a5a6;
-  border: 1px solid rgba(149, 165, 166, 0.3);
-}
-
-/* Mora Breakdown */
+/* Mora breakdown */
 .mora-breakdown {
   background: var(--color-steel);
   padding: 1rem;
@@ -192,9 +129,9 @@
 
 .accruing-badge {
   font-size: 0.7rem;
-  background: rgba(231, 76, 60, 0.2);
-  color: #e74c3c;
-  border: 1px solid rgba(231, 76, 60, 0.4);
+  background: rgba(var(--color-danger-rgb), 0.2);
+  color: var(--color-danger);
+  border: 1px solid rgba(var(--color-danger-rgb), 0.4);
   padding: 0.1rem 0.4rem;
   border-radius: 10px;
   text-transform: uppercase;
@@ -223,7 +160,7 @@
 }
 
 .debt-total-row.paid-row {
-  color: #2ecc71;
+  color: var(--color-success);
 }
 
 .debt-total-row.balance-row {
@@ -232,154 +169,10 @@
   color: var(--color-white);
 }
 
-/* Pay Button */
-.btn-pay {
-  width: 100%;
-}
-
-/* Payment Modal */
-.payment-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  animation: fadeIn 0.3s ease;
-  padding: 1rem;
-}
-
-.payment-modal {
-  background: var(--color-chrome);
-  border: 2px solid var(--color-primary);
-  padding: 2rem;
-  max-width: 500px;
-  width: 100%;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
-  animation: slideUp 0.3s ease;
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.payment-modal h3 {
-  margin: 0 0 0.5rem 0;
-  color: var(--color-primary);
-  font-size: 1.5rem;
-}
-
-.modal-subtitle {
-  color: var(--color-fog);
-  margin: 0;
-  font-size: 1rem;
-}
-
+/* Modal extra: balance line under the subtitle */
 .modal-balance {
   color: var(--color-white);
   font-weight: 700;
   font-size: 1rem;
   margin: 0.25rem 0 1.5rem 0;
-}
-
-.form-group {
-  margin-bottom: 1.25rem;
-}
-
-.form-group label {
-  display: block;
-  font-size: 0.813rem;
-  color: var(--color-exhaust);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.modal-actions .btn {
-  flex: 1;
-}
-
-/* Upload buttons */
-.upload-buttons {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.upload-buttons .btn-secondary {
-  flex: 1;
-  padding: 0.75rem;
-  font-size: 0.875rem;
-}
-
-/* Hide camera button on desktop */
-@media (min-width: 769px) {
-  .upload-buttons button:first-child {
-    display: none;
-  }
-}
-
-.file-name {
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-}
-
-/* Messages */
-.message {
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  animation: slideUp 0.3s ease;
-}
-
-.message-success {
-  background: rgba(46, 204, 113, 0.15);
-  border: 1px solid #2ecc71;
-  color: #27ae60;
-}
-
-.message-warning {
-  background: rgba(241, 196, 15, 0.15);
-  border: 1px solid #f1c40f;
-  color: #f39c12;
-}
-
-/* Empty state */
-.no-results {
-  text-align: center;
-  padding: 4rem 2rem;
-  color: var(--color-exhaust);
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .payment-modal {
-    padding: 1.5rem;
-  }
-
-  .modal-actions {
-    flex-direction: column;
-  }
 }

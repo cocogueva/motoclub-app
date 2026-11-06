@@ -1,0 +1,52 @@
+/* ==========================================================================
+   THEME TOKENS
+   The only place colors are defined. Everything else uses these variables.
+
+   Colors are declared as "R, G, B" channels (the *-rgb tokens) so tints can
+   be derived: rgba(var(--color-primary-rgb), 0.1). The plain token
+   (--color-primary) is built from the channels, so changing a color means
+   editing ONE line.
+
+   To make the club colors configurable at runtime later, set the channels on
+   :root, e.g. document.documentElement.style.setProperty(
+     "--color-primary-rgb", "232, 220, 197");
+   ========================================================================== */
+
+:root {
+  /* Club colors (the configurable ones) */
+  --color-primary-rgb: 232, 220, 197; /* Bone - main accent */
+  --color-primary: rgb(var(--color-primary-rgb));
+  --color-primary-hover: #f5efe0; /* Lighter bone for hover */
+
+  /* Surfaces & text (dark theme) */
+  --color-asphalt: #0a0a0a; /* page background */
+  --color-chrome: #1a1a1a; /* cards, header */
+  --color-steel: #2a2a2a; /* borders, inset panels */
+  --color-engine: #333333;
+  --color-exhaust: #666666; /* muted text */
+  --color-fog: #cccccc; /* secondary text */
+  --color-white: #ffffff;
+
+  /* Status colors */
+  --color-success-rgb: 46, 204, 113; /* Pagado */
+  --color-danger-rgb: 231, 76, 60; /* Vencido / pendiente de deuda */
+  --color-warning-rgb: 243, 156, 18; /* Vence pronto */
+  --color-info-rgb: 52, 152, 219; /* Congelado */
+  --color-muted-rgb: 149, 165, 166; /* Trasladado / condonado / otro */
+  --color-success: rgb(var(--color-success-rgb));
+  --color-danger: rgb(var(--color-danger-rgb));
+  --color-danger-dark: #c0392b;
+  --color-warning: rgb(var(--color-warning-rgb));
+  --color-info: rgb(var(--color-info-rgb));
+  --color-muted: rgb(var(--color-muted-rgb));
+
+  /* Typography */
+  --font-display: "Bebas Neue", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  /* Shadows */
+  --shadow-chrome: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(var(--color-primary-rgb), 0.3);
+  --shadow-lift: 0 10px 30px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(var(--color-primary-rgb), 0.1);
+}

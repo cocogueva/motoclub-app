@@ -170,7 +170,7 @@ function Profile() {
 
   if (loading) {
     return (
-      <div className="profile-loading">
+      <div className="page-loading">
         <div className="loading-spinner"></div>
       </div>
     );

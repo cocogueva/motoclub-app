@@ -199,7 +199,7 @@ function MyDebts() {
 
   if (loading) {
     return (
-      <div className="debts-loading">
+      <div className="page-loading">
         <div className="loading-spinner"></div>
       </div>
     );

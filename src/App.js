@@ -4,6 +4,9 @@ import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
 import "@fontsource/inter/700.css";
+import "./styles/theme.css";
+import "./styles/base.css";
+import "./styles/shared.css";
 import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -21,7 +24,6 @@ import MyDues from "./pages/MyDues";
 import MyDebts from "./pages/MyDebts";
 import Profile from "./pages/Profile";
 import Layout from "./components/Layout";
-import "./App.css";
 
 function App() {
   const [session, setSession] = useState(null);

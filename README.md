@@ -188,12 +188,12 @@ Build settings:
 ## Customization
 
 ### Change Colors
-Edit `src/App.css` and modify the CSS variables:
+All colors live in `src/styles/theme.css`. Colors are defined as `R, G, B` channels so tints derive from them — change one line:
 ```css
 :root {
-  --color-spark: #ff6b35;  /* Your primary color */
-  --color-flame: #ff4500;  /* Hover color */
-  /* ... etc */
+  --color-primary-rgb: 232, 220, 197;  /* club accent (bone) */
+  --color-primary-hover: #f5efe0;      /* hover variant */
+  /* status colors: --color-success-rgb, --color-danger-rgb, ... */
 }
 ```
 

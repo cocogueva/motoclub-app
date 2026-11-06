@@ -124,7 +124,7 @@ function AllPayments() {
 
   if (loading) {
     return (
-      <div className="all-payments-loading">
+      <div className="page-loading">
         <div className="loading-spinner"></div>
       </div>
     );

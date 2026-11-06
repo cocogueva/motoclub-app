@@ -2,33 +2,8 @@
   animation: fadeIn 0.5s ease;
 }
 
-.members-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
-}
-
 .members-header {
   margin-bottom: 2rem;
-}
-
-.page-title {
-  margin-bottom: 0.5rem;
-  background: linear-gradient(
-    135deg,
-    var(--color-white) 0%,
-    var(--color-spark) 100%
-  );
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.page-subtitle {
-  color: var(--color-exhaust);
-  font-size: 1rem;
-  margin: 0;
 }
 
 /* Search Bar */
@@ -53,14 +28,6 @@
   pointer-events: none;
   opacity: 0.5;
 }
-
-/* No Results */
-.no-results {
-  text-align: center;
-  padding: 4rem 2rem;
-  color: var(--color-exhaust);
-}
-
 /* Members Grid */
 .members-grid {
   display: grid;
@@ -78,9 +45,9 @@
 }
 
 .member-card:hover {
-  border-color: var(--color-spark);
+  border-color: var(--color-primary);
   transform: translateY(-4px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(232, 220, 197, 0.1);
+  box-shadow: var(--shadow-lift);
 }
 
 /* Member Photo */
@@ -140,13 +107,6 @@
   gap: 1rem;
 }
 
-.member-nickname {
-  font-style: italic;
-  color: var(--color-spark);
-  margin: 0;
-  font-size: 1rem;
-}
-
 /* Member Details */
 .member-details {
   display: flex;
@@ -172,7 +132,7 @@
 
 /* Member Email */
 .member-email {
-  color: var(--color-spark);
+  color: var(--color-primary);
   text-decoration: none;
   font-size: 0.875rem;
   transition: all 0.3s ease;
@@ -183,7 +143,7 @@
 }
 
 .member-email:hover {
-  color: var(--color-flame);
+  color: var(--color-primary-hover);
   text-decoration: underline;
 }
 
@@ -196,10 +156,6 @@
 
   .member-photo {
     height: 280px;
-  }
-
-  .page-title {
-    font-size: 2rem;
   }
 }
 
@@ -214,13 +170,5 @@
 
   .member-photo {
     height: 260px;
-  }
-}
-
-/* Animation for staggered entrance */
-@media (prefers-reduced-motion: no-preference) {
-  .member-card {
-    animation-duration: 0.5s;
-    animation-fill-mode: both;
   }
 }

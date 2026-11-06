@@ -2,13 +2,6 @@
   animation: fadeIn 0.5s ease;
 }
 
-.payments-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
-}
-
 .payments-header {
   display: flex;
   justify-content: space-between;
@@ -29,61 +22,8 @@
 
 .payment-form h3 {
   margin: 0 0 1.5rem 0;
-  color: var(--color-spark);
+  color: var(--color-primary);
   font-size: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  color: var(--color-fog);
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-}
-
-.file-name {
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--color-spark);
-}
-
-/* Messages */
-.message {
-  margin-top: 1.5rem;
-  padding: 1rem;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  animation: slideDown 0.3s ease;
-}
-
-.message-success {
-  background: rgba(46, 204, 113, 0.15);
-  border: 1px solid #2ecc71;
-  color: #27ae60;
-}
-
-.message-warning {
-  background: rgba(241, 196, 15, 0.15);
-  border: 1px solid #f1c40f;
-  color: #f39c12;
-}
-
-/* No Results */
-.no-results {
-  text-align: center;
-  padding: 4rem 2rem;
-  color: var(--color-exhaust);
-}
-
-.no-results p {
-  margin-bottom: 1.5rem;
 }
 
 /* Payments List */
@@ -108,16 +48,16 @@
   top: 0;
   bottom: 0;
   width: 4px;
-  background: var(--color-spark);
+  background: var(--color-primary);
   transform: scaleY(0);
   transform-origin: top;
   transition: transform 0.3s ease;
 }
 
 .payment-card:hover {
-  border-color: var(--color-spark);
+  border-color: var(--color-primary);
   transform: translateX(8px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(232, 220, 197, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(var(--color-primary-rgb), 0.1);
 }
 
 .payment-card:hover::before {
@@ -147,36 +87,24 @@
 .payment-type-badge {
   display: inline-block;
   margin-top: 0.5rem;
-  padding: 0.25rem 0.75rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .payment-type-badge.cuota_mensual {
-  background: rgba(46, 204, 113, 0.1);
-  color: #2ecc71;
-  border: 1px solid rgba(46, 204, 113, 0.3);
+  --tone: var(--color-success-rgb);
 }
 
 .payment-type-badge.pago_adelantado {
-  background: rgba(52, 152, 219, 0.1);
-  color: #3498db;
-  border: 1px solid rgba(52, 152, 219, 0.3);
+  --tone: var(--color-info-rgb);
 }
 
 .payment-type-badge.otro_concepto {
-  background: rgba(149, 165, 166, 0.1);
-  color: #95a5a6;
-  border: 1px solid rgba(149, 165, 166, 0.3);
+  --tone: var(--color-muted-rgb);
 }
 
 .payment-amount {
   font-size: 2rem;
   font-family: var(--font-display);
-  color: var(--color-spark);
+  color: var(--color-primary);
   letter-spacing: 2px;
 }
 
@@ -186,14 +114,14 @@
   margin: 0 0 1rem 0;
   padding: 0.75rem;
   background: var(--color-steel);
-  border-left: 3px solid var(--color-spark);
+  border-left: 3px solid var(--color-primary);
 }
 
 .payment-voucher-link {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--color-spark);
+  color: var(--color-primary);
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 600;
@@ -201,7 +129,7 @@
 }
 
 .payment-voucher-link:hover {
-  color: var(--color-flame);
+  color: var(--color-primary-hover);
   transform: translateX(4px);
 }
 
@@ -228,10 +156,6 @@
   .payment-amount {
     font-size: 1.75rem;
   }
-
-  .page-title {
-    font-size: 2rem;
-  }
 }
 
 @media (max-width: 480px) {
@@ -249,36 +173,5 @@
 
   .payment-amount {
     font-size: 1.5rem;
-  }
-}
-
-/* Upload buttons */
-.upload-buttons {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.upload-buttons .btn-secondary {
-  flex: 1;
-  padding: 0.75rem;
-  font-size: 0.875rem;
-}
-
-/* Hide camera button on desktop */
-@media (min-width: 769px) {
-  .upload-buttons {
-    justify-content: flex-start;
-  }
-
-  .upload-buttons button:first-child {
-    display: none;
-  }
-
-  .upload-buttons button.btn-secondary {
-    flex: 0 0 auto;
-    width: fit-content;
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
   }
 }

@@ -1,29 +1,14 @@
 /* ==========================================================================
-   ALL PAYMENTS PAGE STYLES
-   ==========================================================================
+   ALL PAYMENTS (Estado de Pagos)
 
-   COLOR REFERENCE (Payment Status Colors):
-   -----------------------------------------
-   - PAID (Pagado):      Green  #2ecc71  rgba(46, 204, 113, X)
-   - OVERDUE (Vencido):  Red    #e74c3c  rgba(231, 76, 60, X)
-   - DUE SOON:           Orange #f39c12  rgba(243, 156, 18, X)
-   - FROZEN (Congelado): Blue   #3498db  rgba(52, 152, 219, X)
-   - UNPAID (No Pagado): Grey   Uses theme variables (--color-steel, --color-exhaust)
-   - PENDING:            Grey   Uses theme variables (future months, not yet due)
-
-   To change a status color, search for the status name (e.g. "status-paid")
-   and update both the hex color and rgba values to match.
+   Status colors come from the theme tokens (styles/theme.css) through
+   --tone: paid = success (green), overdue = danger (red),
+   due-soon = warning (orange), frozen = info (blue).
+   pending / retired are neutral grey and styled explicitly.
    ========================================================================== */
 
 .all-payments-page {
   animation: fadeIn 0.5s ease;
-}
-
-.all-payments-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
 }
 
 .all-payments-header {
@@ -33,9 +18,9 @@
   align-items: flex-start;
 }
 
-/* ==========================================================================
-   FILTERS BAR
-   ========================================================================== */
+/* --------------------------------------------------------------------------
+   Filters
+   -------------------------------------------------------------------------- */
 .filters-bar {
   display: flex;
   gap: 1.5rem;
@@ -61,10 +46,9 @@
   min-width: 150px;
 }
 
-/* ==========================================================================
-   PAYMENTS GRID - YEAR VIEW
-   Shows all members with their 12-month payment indicators
-   ========================================================================== */
+/* --------------------------------------------------------------------------
+   Year view: one card per member with 12 month indicators
+   -------------------------------------------------------------------------- */
 .payments-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
@@ -81,7 +65,12 @@
 .payment-status-card:hover {
   border-color: var(--color-primary);
   transform: translateY(-4px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(232, 220, 197, 0.1);
+  box-shadow: var(--shadow-lift);
+}
+
+/* Retired member: greyed out, sorted last (sorting is done in JS) */
+.payment-status-card.retired {
+  opacity: 0.7;
 }
 
 .member-info-row {
@@ -96,11 +85,6 @@
   font-size: 1.25rem;
   margin: 0 0 0.25rem 0;
   color: var(--color-white);
-}
-
-/* Retired member: greyed-out name, card pushed to the bottom of the grid */
-.payment-status-card.retired {
-  opacity: 0.7;
 }
 
 .member-name-card.member-name-retired {
@@ -142,10 +126,7 @@
   letter-spacing: 1px;
 }
 
-/* ==========================================================================
-   MONTH INDICATORS (Year View - Small boxes for each month)
-   These are the 12 small boxes showing payment status per month
-   ========================================================================== */
+/* Month indicators */
 .month-indicators {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -167,31 +148,33 @@
   min-height: 36px;
 }
 
-/* PAID - Green: Payment received for this month */
-.month-indicator.status-paid {
-  background: rgba(46, 204, 113, 0.2);
-  border-color: #2ecc71;
-  color: #2ecc71;
+.month-indicator:hover {
+  transform: scale(1.05);
+}
+
+/* Colored statuses (tone set by .status-* in shared.css) */
+.month-indicator.status-paid,
+.month-indicator.status-overdue,
+.month-indicator.status-due-soon,
+.month-indicator.status-frozen {
+  background: rgba(var(--tone), 0.2);
+  border-color: rgb(var(--tone));
+  color: rgb(var(--tone));
   font-size: 1.125rem;
 }
 
-/* OVERDUE/UNPAID - Red: Payment is overdue */
-.month-indicator.status-overdue {
-  background: rgba(231, 76, 60, 0.2);
-  border-color: #e74c3c;
-  color: #e74c3c;
-  font-size: 1.125rem;
+.month-indicator.status-frozen {
+  font-size: 0.875rem;
 }
 
-/* DUE SOON - Orange: Payment due within grace period */
-.month-indicator.status-due-soon {
-  background: rgba(243, 156, 18, 0.2);
-  border-color: #f39c12;
-  color: #f39c12;
-  font-size: 1.125rem;
+.month-indicator.status-paid:hover,
+.month-indicator.status-overdue:hover,
+.month-indicator.status-due-soon:hover,
+.month-indicator.status-frozen:hover {
+  background: rgba(var(--tone), 0.3);
 }
 
-/* PENDING - Grey: Future month, not yet due */
+/* PENDING: future month, not yet due */
 .month-indicator.status-pending {
   background: var(--color-steel);
   border-color: var(--color-exhaust);
@@ -199,15 +182,11 @@
   opacity: 0.7;
 }
 
-/* FROZEN - Blue: Member's payment is frozen for this month */
-.month-indicator.status-frozen {
-  background: rgba(52, 152, 219, 0.2);
-  border-color: #3498db;
-  color: #3498db;
-  font-size: 0.875rem;
+.month-indicator.status-pending:hover {
+  opacity: 1;
 }
 
-/* RETIRED - Neutral grey: former member, no dues expected this month */
+/* RETIRED: former member, no dues expected this month */
 .month-indicator.status-retired {
   background: var(--color-steel);
   border-color: var(--color-exhaust);
@@ -215,42 +194,23 @@
   opacity: 0.5;
 }
 
-/* Hover states for month indicators */
-.month-indicator.status-paid:hover {
-  background: rgba(46, 204, 113, 0.3);
-  transform: scale(1.05);
-}
-
-.month-indicator.status-overdue:hover {
-  background: rgba(231, 76, 60, 0.3);
-  transform: scale(1.05);
-}
-
-.month-indicator.status-due-soon:hover {
-  background: rgba(243, 156, 18, 0.3);
-  transform: scale(1.05);
-}
-
-.month-indicator.status-pending:hover {
-  opacity: 1;
-  transform: scale(1.05);
-}
-
-.month-indicator.status-frozen:hover {
-  background: rgba(52, 152, 219, 0.3);
-  transform: scale(1.05);
-}
-
 .month-indicator.status-retired:hover {
   opacity: 0.7;
-  transform: scale(1.05);
 }
 
-/* ==========================================================================
-   MONTH VIEW - Member Cards
-   Shows individual member cards when filtering by a specific month
-   Each card shows: Pagado (paid), No Pagado (unpaid), or Congelado (frozen)
-   ========================================================================== */
+/* Paid months with a voucher open the preview on click */
+.month-indicator.has-voucher {
+  cursor: pointer;
+}
+
+.month-indicator.has-voucher:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px var(--color-success);
+}
+
+/* --------------------------------------------------------------------------
+   Month view: one small card per member for the selected month
+   -------------------------------------------------------------------------- */
 .payments-list-simple {
   display: flex;
   flex-direction: column;
@@ -281,7 +241,6 @@
   gap: 1rem;
 }
 
-/* Base card styles */
 .member-simple-card {
   background: var(--color-chrome);
   border: 2px solid var(--color-steel);
@@ -294,97 +253,34 @@
 
 .member-simple-card:hover {
   transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* --------------------------------------------------------------------------
-   PAID (Pagado) - Green #2ecc71
-   Card style for members who have paid this month
-   -------------------------------------------------------------------------- */
+.member-simple-card.has-voucher {
+  cursor: pointer;
+}
+
 .member-simple-card.paid {
-  border-left: 4px solid #2ecc71;
+  --tone: var(--color-success-rgb);
 }
-
-.member-simple-card.paid:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-/* --------------------------------------------------------------------------
-   UNPAID (No Pagado) - Grey (not yet due)
-   Card style for members who haven't paid but month isn't overdue yet
-   -------------------------------------------------------------------------- */
-.member-simple-card.unpaid {
-  border-left: 4px solid var(--color-exhaust);
-  opacity: 0.7;
-}
-
-.member-simple-card.unpaid:hover {
-  opacity: 1;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-/* --------------------------------------------------------------------------
-   OVERDUE (Vencido) - Red #e74c3c
-   Card style for members who haven't paid and the month is past due
-   -------------------------------------------------------------------------- */
 .member-simple-card.overdue {
-  border-left: 4px solid #e74c3c;
+  --tone: var(--color-danger-rgb);
 }
-
-.member-simple-card.overdue:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-/* --------------------------------------------------------------------------
-   FROZEN (Congelado) - Blue #3498db
-   Card style for members with frozen payments
-   -------------------------------------------------------------------------- */
-.member-simple-card.frozen {
-  border-left: 4px solid #3498db;
-}
-
-.member-simple-card.frozen:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-/* --------------------------------------------------------------------------
-   RETIRED (Retirado) - Neutral grey
-   Card style for former members; no dues expected
-   -------------------------------------------------------------------------- */
-.member-simple-card.retired {
-  border-left: 4px solid var(--color-exhaust);
-  opacity: 0.55;
-}
-
-.member-simple-card.retired:hover {
-  opacity: 0.75;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.member-simple-card.retired .status-indicator {
-  background: var(--color-steel);
-  color: var(--color-exhaust);
-}
-
-.member-simple-card.retired .status-text {
-  color: var(--color-exhaust);
-}
-
-/* --------------------------------------------------------------------------
-   DUE SOON (Próximo) - Orange #f39c12
-   Card style for members whose payment is due within 10 days
-   -------------------------------------------------------------------------- */
 .member-simple-card.due-soon {
-  border-left: 4px solid #f39c12;
+  --tone: var(--color-warning-rgb);
+}
+.member-simple-card.frozen {
+  --tone: var(--color-info-rgb);
 }
 
-.member-simple-card.due-soon:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+.member-simple-card.paid,
+.member-simple-card.overdue,
+.member-simple-card.due-soon,
+.member-simple-card.frozen {
+  border-left: 4px solid rgb(var(--tone));
 }
 
-/* --------------------------------------------------------------------------
-   PENDING (Pendiente) - Grey
-   Card style for future months not yet due
-   -------------------------------------------------------------------------- */
+/* PENDING: not yet due */
 .member-simple-card.pending {
   border-left: 4px solid var(--color-exhaust);
   opacity: 0.7;
@@ -392,13 +288,9 @@
 
 .member-simple-card.pending:hover {
   opacity: 1;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* --------------------------------------------------------------------------
-   STATUS INDICATOR (Circle icon on each card)
-   The circular icon with checkmark, X, or snowflake
-   -------------------------------------------------------------------------- */
+/* Status circle (✓ ✗ ! ❄️) */
 .status-indicator {
   width: 40px;
   height: 40px;
@@ -409,48 +301,15 @@
   font-size: 1.5rem;
   font-weight: bold;
   flex-shrink: 0;
+  background: rgba(var(--tone), 0.2);
+  color: rgb(var(--tone));
 }
 
-/* Paid indicator - Green background and icon */
-.member-simple-card.paid .status-indicator {
-  background: rgba(46, 204, 113, 0.2);
-  color: #2ecc71;
-}
-
-/* Unpaid indicator - Grey background and icon (not yet due) */
-.member-simple-card.unpaid .status-indicator {
-  background: var(--color-steel);
-  color: var(--color-exhaust);
-}
-
-/* Overdue indicator - Red background and icon */
-.member-simple-card.overdue .status-indicator {
-  background: rgba(231, 76, 60, 0.2);
-  color: #e74c3c;
-}
-
-/* Frozen indicator - Blue background and icon */
-.member-simple-card.frozen .status-indicator {
-  background: rgba(52, 152, 219, 0.2);
-  color: #3498db;
-}
-
-/* Due soon indicator - Orange background and icon */
-.member-simple-card.due-soon .status-indicator {
-  background: rgba(243, 156, 18, 0.2);
-  color: #f39c12;
-}
-
-/* Pending indicator - Grey background and icon */
 .member-simple-card.pending .status-indicator {
   background: var(--color-steel);
   color: var(--color-exhaust);
 }
 
-/* --------------------------------------------------------------------------
-   MEMBER INFO & STATUS TEXT
-   The name and status label on each card
-   -------------------------------------------------------------------------- */
 .member-simple-info {
   flex: 1;
 }
@@ -466,57 +325,16 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
+  color: rgb(var(--tone));
 }
 
-/* Paid status text - Green */
-.member-simple-card.paid .status-text {
-  color: #2ecc71;
-}
-
-/* Unpaid status text - Grey (not yet due) */
-.member-simple-card.unpaid .status-text {
-  color: var(--color-exhaust);
-}
-
-/* Overdue status text - Red */
-.member-simple-card.overdue .status-text {
-  color: #e74c3c;
-}
-
-/* Frozen status text - Blue */
-.member-simple-card.frozen .status-text {
-  color: #3498db;
-}
-
-/* Due soon status text - Orange */
-.member-simple-card.due-soon .status-text {
-  color: #f39c12;
-}
-
-/* Pending status text - Grey */
 .member-simple-card.pending .status-text {
   color: var(--color-exhaust);
 }
 
-/* ==========================================================================
-   VOUCHER CLICKABLE STATES
-   ========================================================================== */
-.month-indicator.has-voucher {
-  cursor: pointer;
-}
-
-.month-indicator.has-voucher:hover {
-  transform: scale(1.15);
-  box-shadow: 0 0 0 2px #2ecc71;
-}
-
-.member-simple-card.has-voucher {
-  cursor: pointer;
-}
-
-/* ==========================================================================
-   VOUCHER PREVIEW MODAL
-   ========================================================================== */
+/* --------------------------------------------------------------------------
+   Voucher preview modal
+   -------------------------------------------------------------------------- */
 .voucher-modal-overlay {
   position: fixed;
   inset: 0;
@@ -590,21 +408,17 @@
   display: block;
 }
 
-/* ==========================================================================
-   RESPONSIVE STYLES
-   Adjustments for tablet and mobile screens
-   ========================================================================== */
+/* --------------------------------------------------------------------------
+   Responsive
+   -------------------------------------------------------------------------- */
 @media (max-width: 768px) {
-  .payments-grid {
+  .payments-grid,
+  .members-simple-grid {
     grid-template-columns: 1fr;
   }
 
   .month-indicators {
     grid-template-columns: repeat(4, 1fr);
-  }
-
-  .members-simple-grid {
-    grid-template-columns: 1fr;
   }
 
   .filters-bar {

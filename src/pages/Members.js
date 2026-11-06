@@ -44,7 +44,7 @@ function Members() {
 
   if (loading) {
     return (
-      <div className="members-loading">
+      <div className="page-loading">
         <div className="loading-spinner"></div>
       </div>
     );
