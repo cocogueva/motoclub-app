@@ -499,7 +499,7 @@ function Ride() {
               : "Ubicación en vivo del grupo"}
           </p>
         </div>
-        <span className="wip-tape">🚧🔨 En construcción</span>
+        <span className="wip-tape">👷🚧 En construcción</span>
       </div>
 
       {message && <div className={`message message-${message.type}`}>{message.text}</div>}
