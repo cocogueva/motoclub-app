@@ -23,6 +23,7 @@ import AllPayments from "./pages/AllPayments";
 import MyDues from "./pages/MyDues";
 import MyDebts from "./pages/MyDebts";
 import Profile from "./pages/Profile";
+import Ride from "./pages/Ride";
 import Layout from "./components/Layout";
 
 function App() {
@@ -72,6 +73,7 @@ function App() {
             <Route path="/payments" element={<Payments />} />
             <Route path="/all-payments" element={<AllPayments />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/ride" element={<Ride />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         )}

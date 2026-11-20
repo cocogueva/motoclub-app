@@ -354,3 +354,58 @@
     font-size: 1.125rem;
   }
 }
+
+/* ==========================================================================
+   FEATURE IN CONSTRUCTION
+   - .wip on ANY card / link / button: diagonal hazard-tape ribbon in its top-right
+     corner with 🚧🔨 (custom text: data-wip="BETA"). Uses ::after, so the element
+     must not use its own ::after.
+   - .wip-tape: the same tape as an inline tag (e.g. next to a page title).
+   ========================================================================== */
+.wip-tape,
+.wip::after {
+  --stripes: repeating-linear-gradient(
+    -45deg,
+    var(--color-asphalt) 0 4px,
+    var(--color-caution) 4px 8px
+  );
+  background: var(--stripes) top / 100% 3px no-repeat,
+    var(--stripes) bottom / 100% 3px no-repeat, var(--color-caution);
+  color: var(--color-asphalt);
+  font-family: var(--font-body);
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: var(--shadow-pin);
+}
+
+.wip-tape {
+  display: inline-block;
+  font-size: 0.625rem;
+  padding: 6px 8px;
+}
+
+.wip {
+  position: relative;
+  overflow: hidden;
+}
+
+.wip::after {
+  content: "🚧🔨";
+  position: absolute;
+  top: 10px;
+  right: -30px;
+  width: 104px;
+  padding: 6px 0;
+  text-align: center;
+  font-size: 0.75rem;
+  transform: rotate(40deg);
+  pointer-events: none;
+}
+
+.wip[data-wip]::after {
+  content: attr(data-wip);
+  font-size: 0.5rem;
+}

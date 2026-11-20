@@ -243,6 +243,11 @@ function Dashboard() {
             <span className="action-icon">📜</span>
             <span className="action-label">IA Actas ↗</span>
           </a>
+
+          <button className="action-card wip" onClick={() => navigate("/ride")}>
+            <span className="action-icon">🗺️</span>
+            <span className="action-label">Rides</span>
+          </button>
         </div>
       </div>
     </div>

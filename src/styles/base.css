@@ -97,6 +97,19 @@ h3 {
   left: 100%;
 }
 
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+a.btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .btn-secondary {
   background: transparent;
   border: 2px solid var(--color-primary);
@@ -106,6 +119,14 @@ h3 {
 .btn-secondary:hover {
   background: var(--color-primary);
   color: var(--color-white);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+}
+
+.btn-danger:hover {
+  background: var(--color-danger-dark);
 }
 
 /* Inputs */

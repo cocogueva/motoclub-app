@@ -1,0 +1,430 @@
+/* Ride (live tracking POC) */
+
+.ride-page {
+  animation: fadeIn 0.5s ease;
+}
+
+.ride-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Panels (create / actions / planning) */
+.ride-panel {
+  background: var(--color-chrome);
+  border: 2px solid var(--color-steel);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ride-empty {
+  color: var(--color-exhaust);
+  font-size: 0.875rem;
+}
+
+.ride-create-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.ride-actions,
+.ride-plan-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.ride-actions select {
+  width: auto;
+  min-width: 170px;
+  padding: 0.7rem 0.75rem;
+}
+
+.ride-page .btn {
+  padding: 0.75rem 1.25rem;
+}
+
+.ride-plan-hint {
+  color: var(--color-fog);
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Tracking status (bar on the page, HUD in ride mode): tone = ok / problem */
+.ride-status,
+.ride-hud {
+  --tone: var(--color-success-rgb);
+  color: rgb(var(--tone));
+  border: 1px solid rgba(var(--tone), 0.4);
+}
+
+.ride-status.has-error,
+.ride-hud.has-error {
+  --tone: var(--color-warning-rgb);
+}
+
+.ride-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  font-size: 0.813rem;
+  background: rgba(var(--tone), 0.08);
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 1rem;
+}
+
+/* Map */
+.ride-map-wrap {
+  position: relative;
+  z-index: 0; /* keep Leaflet's internal z-indexes below the app header/nav */
+  border: 2px solid var(--color-steel);
+  margin-bottom: 1.5rem;
+}
+
+.ride-map-wrap.is-planning {
+  border-color: var(--color-info);
+}
+
+.ride-map-wrap.is-planning .leaflet-container {
+  cursor: crosshair;
+}
+
+.ride-map {
+  height: 60vh;
+  min-height: 360px;
+  width: 100%;
+}
+
+/* Dark map: invert the OSM tiles, rotate hues back so water stays blue */
+.ride-tiles-dark {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
+}
+
+.ride-route-line {
+  stroke: var(--color-info);
+  stroke-opacity: 0.85;
+}
+
+.ride-map-controls {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ride-map-controls button {
+  background: var(--color-chrome);
+  color: var(--color-white);
+  border: 1px solid var(--color-steel);
+  padding: 0.45rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  box-shadow: var(--shadow-chrome);
+}
+
+.ride-map-controls button:hover {
+  border-color: var(--color-primary);
+}
+
+/* Rider markers on the map (Leaflet divIcon) */
+.rider-marker {
+  background: none;
+  border: none;
+}
+
+.rider-pin {
+  --ring: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: opacity 0.3s ease;
+}
+
+.rider-pin.role-lead {
+  --ring: var(--color-warning);
+}
+
+.rider-pin.role-sweep {
+  --ring: var(--color-success);
+}
+
+.rider-pin-avatar {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3px solid var(--ring);
+  background: var(--color-steel);
+  box-shadow: var(--shadow-pin);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rider-pin-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.rider-pin-initial {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--color-white);
+}
+
+.rider-pin-role {
+  position: absolute;
+  bottom: -6px;
+  right: -8px;
+  font-size: 0.9rem;
+  background: var(--color-chrome);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ring);
+}
+
+.rider-pin-name {
+  background: rgba(var(--color-asphalt-rgb), 0.85);
+  color: var(--color-white);
+  font-size: 0.688rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 8px;
+  white-space: nowrap;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rider-pin.is-me .rider-pin-avatar {
+  box-shadow: 0 0 0 4px rgba(var(--color-info-rgb), 0.45), var(--shadow-pin);
+}
+
+.rider-pin.dim {
+  opacity: 0.6;
+}
+
+.rider-pin.lost {
+  opacity: 0.35;
+  filter: grayscale(100%);
+}
+
+.route-flag {
+  font-size: 1.6rem;
+  line-height: 1;
+  filter: drop-shadow(var(--shadow-pin));
+}
+
+/* Riders list */
+.ride-riders {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ride-rider {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: var(--color-chrome);
+  border: 2px solid var(--color-steel);
+  padding: 0.75rem 1rem;
+  transition: opacity 0.3s ease;
+}
+
+.ride-rider.dim {
+  opacity: 0.7;
+}
+
+.ride-rider.lost {
+  opacity: 0.45;
+}
+
+.ride-rider-avatar {
+  --ring: var(--color-steel);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--ring);
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-steel);
+  font-family: var(--font-display);
+}
+
+.ride-rider-avatar.role-lead {
+  --ring: var(--color-warning);
+}
+
+.ride-rider-avatar.role-sweep {
+  --ring: var(--color-success);
+}
+
+.ride-rider-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ride-rider-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.ride-rider-info span,
+.ride-rider-meta {
+  font-size: 0.75rem;
+  color: var(--color-exhaust);
+}
+
+.ride-rider-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.15rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .ride-create-row {
+    flex-direction: column;
+  }
+
+  .ride-actions select {
+    flex: 1 1 100%;
+  }
+
+  .ride-map {
+    height: 55vh;
+  }
+}
+
+/* Paused = the rider's app is in the background (GPS stopped), not lost */
+.rider-pin.paused,
+.ride-rider.paused {
+  opacity: 0.5;
+}
+
+.rider-pin.paused .rider-pin-avatar {
+  border-style: dashed;
+}
+
+/* ==========================================================================
+   Ride mode: full-screen map with big buttons (phone on the handlebar)
+   ========================================================================== */
+.ride-map-wrap.is-ride-mode {
+  position: fixed;
+  inset: 0;
+  z-index: 3000; /* above the app header/nav */
+  margin: 0;
+  border: none;
+  background: var(--color-asphalt);
+}
+
+.ride-map-wrap.is-ride-mode .ride-map {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+}
+
+.ride-hud {
+  position: absolute;
+  top: calc(0.6rem + env(safe-area-inset-top));
+  left: 3.6rem; /* clear of the Leaflet zoom buttons */
+  right: 0.6rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0.8rem;
+  background: rgba(var(--color-chrome-rgb), 0.9);
+  border-radius: 8px;
+  box-shadow: var(--shadow-chrome);
+  font-size: 0.813rem;
+}
+
+.ride-hud strong {
+  color: var(--color-white);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ride-mode-bar {
+  position: absolute;
+  left: 0.6rem;
+  right: 0.6rem;
+  bottom: calc(0.6rem + env(safe-area-inset-bottom));
+  z-index: 1000;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.ride-mode-bar button,
+.ride-mode-bar a {
+  flex: 1;
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  background: var(--color-chrome);
+  color: var(--color-white);
+  border: 2px solid var(--color-steel);
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-chrome);
+}
+
+.ride-mode-bar span {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.ride-mode-bar .is-on {
+  border-color: var(--color-info);
+  background: rgba(var(--color-info-rgb), 0.25);
+}
+
+.ride-mode-bar button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Your own position before joining: "you are here", not shared yet */
+.rider-pin.is-preview .rider-pin-avatar {
+  border-style: dashed;
+  box-shadow: 0 0 0 4px rgba(var(--color-info-rgb), 0.3), var(--shadow-pin);
+}

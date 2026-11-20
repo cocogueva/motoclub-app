@@ -66,6 +66,10 @@ function Layout() {
           <span className="nav-icon">💰</span>
           Otros Pagos
         </NavLink>
+        <NavLink to="/ride" className="nav-link wip" onClick={closeMenu}>
+          <span className="nav-icon">🗺️</span>
+          Rides
+        </NavLink>
         <NavLink to="/profile" className="nav-link" onClick={closeMenu}>
           <span className="nav-icon">👤</span>
           Perfil
