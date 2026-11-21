@@ -600,6 +600,41 @@
   color: var(--color-exhaust);
 }
 
+/* Group pin (riders together): club logo + count, ring like a rider pin */
+.rider-group .rider-pin-avatar {
+  width: 52px;
+  height: 52px;
+  background: var(--color-asphalt);
+  border-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.rider-group .rider-pin-avatar img {
+  padding: 3px;
+}
+
+.rider-group-count {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  box-shadow: var(--shadow-pin);
+}
+
+.rider-group .rider-pin-name {
+  max-width: 110px;
+}
+
 /* Problem banner floating on top of the map (between zoom and map buttons) */
 .ride-map-alert {
   position: absolute;
@@ -612,10 +647,15 @@
   box-shadow: var(--shadow-chrome);
 }
 
-/* "● En vivo": shown on the map instead of a status bar when all is well */
+/* "● En vivo": top-left corner of the map (the zoom buttons move below it,
+   see .has-live) instead of a status bar when all is well */
+.ride-map-wrap.has-live .leaflet-top.leaflet-left {
+  top: 2.1rem;
+}
+
 .ride-live {
   position: absolute;
-  top: 5.2rem; /* under the Leaflet zoom buttons */
+  top: 0.6rem;
   left: 10px;
   z-index: 1000;
   display: flex;
@@ -684,5 +724,24 @@
 .ride-mode-bar .is-secondary {
   flex: 0 0 44px;
   opacity: 0.85;
+}
+
+/* Who created the ride: in the subtitle (always) and as a tag in the riders list */
+.ride-creator {
+  white-space: nowrap;
+}
+
+.ride-organizer {
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.4);
+  border-radius: 10px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  vertical-align: middle;
+  white-space: nowrap;
 }
 

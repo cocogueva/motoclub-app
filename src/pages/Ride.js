@@ -12,7 +12,7 @@ import "leaflet-rotate"; // adds map rotation (setBearing) for the "Rumbo" mode
 import "leaflet/dist/leaflet.css";
 import { supabase } from "../supabaseClient";
 import useRideTracking from "../hooks/useRideTracking";
-import RoutePlanner, { insertPlanPoint, makePlanPoint } from "../components/RoutePlanner";
+import RoutePlanner, { addToPlan, makePlanPoint, nameMyLocation } from "../components/RoutePlanner";
 import { reverseGeocode } from "../lib/geocoding";
 import {
   AutoThemeIcon,
@@ -134,6 +134,53 @@ function riderIcon({ apodo, foto, role, stale, isMe, preview = false, heading = 
   return icon;
 }
 
+// Group ("caravan") marker: riders whose pins would overlap on screen merge into
+// one club pin with a count. Their names go in the label.
+const CLUSTER_PX = 46;
+const CLUB_LOGO = `${process.env.PUBLIC_URL}/logo.png`;
+// Average direction of a group (circular mean). Null when the riders don't
+// agree (e.g. a meetup where everyone points a different way).
+function groupHeading(headings) {
+  const valid = headings.filter((h) => Number.isFinite(h));
+  if (valid.length === 0) return null;
+  const rad = (d) => (d * Math.PI) / 180;
+  const x = valid.reduce((sum, h) => sum + Math.cos(rad(h)), 0) / valid.length;
+  const y = valid.reduce((sum, h) => sum + Math.sin(rad(h)), 0) / valid.length;
+  if (Math.hypot(x, y) < 0.7) return null; // too spread out
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+
+function groupIcon(members, headingOf, bearing = 0) {
+  const names = members.map((m) => m.member?.apodo || m.member?.nombre || "?");
+  const heading = groupHeading(members.map(headingOf));
+  const arrow = heading == null ? null : Math.round(((heading + bearing) % 360) / 5) * 5;
+  const hasMe = members.some((m) => m.isMe);
+  const hasLead = members.some((m) => m.role === "lead");
+  const allLost = members.every((m) => m.stale === "lost" || m.stale === "paused");
+  const label = names.length <= 2 ? names.join(" · ") : `${names[0]} +${names.length - 1}`;
+  const key = ["group", names.join(","), hasMe, hasLead, allLost, arrow].join("|");
+  if (iconCache.has(key)) return iconCache.get(key);
+  const icon = L.divIcon({
+    className: "rider-marker",
+    html: `<div class="rider-pin rider-group${hasMe ? " is-me" : ""}${allLost ? " lost" : ""}">
+             <div class="rider-pin-avatar">${
+               arrow == null
+                 ? ""
+                 : `<div class="rider-pin-heading" style="transform: rotate(${arrow}deg)"></div>`
+             }
+               <img src="${CLUB_LOGO}" alt="" />
+               <span class="rider-group-count">${members.length}</span>
+               ${hasLead ? `<span class="rider-pin-role">${ROLES.lead.icon}</span>` : ""}
+             </div>
+             <div class="rider-pin-name">${escapeHtml(label)}</div>
+           </div>`,
+    iconSize: [80, 76],
+    iconAnchor: [40, 26],
+  });
+  iconCache.set(key, icon);
+  return icon;
+}
+
 const flagIcon = (emoji) =>
   L.divIcon({
     className: "rider-marker",
@@ -224,6 +271,58 @@ function RotateMap({ headingUp, heading, onBearing }) {
   return null;
 }
 
+// Rider markers, merged into group pins where they'd overlap at the current zoom.
+// Tapping a group zooms in until its riders separate.
+function RiderLayer({ riders, iconFor, headingOf, bearing }) {
+  const map = useMap();
+  const [view, setView] = useState(0);
+  useMapEvents({ zoomend: () => setView((v) => v + 1), moveend: () => setView((v) => v + 1) });
+
+  const groups = useMemo(() => {
+    const out = [];
+    for (const r of riders) {
+      const pt = map.latLngToContainerPoint([r.lat, r.lng]);
+      const g = out.find((x) => x.pt.distanceTo(pt) < CLUSTER_PX);
+      if (g) g.members.push(r);
+      else out.push({ pt, members: [r] });
+    }
+    return out;
+    // `view` = recompute after every zoom / pan
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [riders, map, view]);
+
+  return groups.map(({ members }) => {
+    if (members.length === 1) {
+      const r = members[0];
+      return (
+        <Marker
+          key={r.member_id}
+          position={[r.lat, r.lng]}
+          zIndexOffset={r.isMe ? 1000 : ROLE_ORDER[r.role] === 1 ? 0 : 500}
+          icon={iconFor(r)}
+        />
+      );
+    }
+    const lat = members.reduce((sum, m) => sum + m.lat, 0) / members.length;
+    const lng = members.reduce((sum, m) => sum + m.lng, 0) / members.length;
+    return (
+      <Marker
+        key={`group-${members.map((m) => m.member_id).join("-")}`}
+        position={[lat, lng]}
+        zIndexOffset={members.some((m) => m.isMe) ? 1000 : 600}
+        icon={groupIcon(members, headingOf, bearing)}
+        eventHandlers={{
+          click: () =>
+            map.fitBounds(
+              members.map((m) => [m.lat, m.lng]),
+              { padding: [90, 90], maxZoom: 19 }
+            ),
+        }}
+      />
+    );
+  });
+}
+
 // "Seguirme": keep my position centered; dragging the map turns it off
 function FollowMe({ enabled, position, onUserMove }) {
   const map = useMap();
@@ -285,7 +384,7 @@ function Ride() {
   const loadRide = useCallback(async () => {
     const { data, error } = await supabase
       .from("rides")
-      .select("*")
+      .select("*, creator:members!rides_created_by_fkey(id, apodo, nombre)")
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(1)
@@ -408,6 +507,9 @@ function Ride() {
   );
 
   const positioned = displayRiders.filter((r) => r.lat != null);
+  // Direction of travel for a rider's arrow: mine from local GPS, others only while live
+  const riderHeading = (r) =>
+    r.isMe ? tracking.heading : ["fresh", "dim"].includes(r.stale) ? r.heading : null;
   const offline = connLost || tracking.offline;
   const problem = offline
     ? "📵 Sin conexión: reintentando. Tu ubicación se enviará al recuperar señal."
@@ -500,7 +602,9 @@ function Ride() {
   // Tap on the map: add the point right away, then name it (reverse lookup)
   const addPlanPoint = async ({ lat, lng }) => {
     const point = makePlanPoint({ lat, lng });
-    setPlanPoints((pts) => insertPlanPoint(pts, point));
+    const { next, mine } = addToPlan(planPoints, point, tracking.position);
+    setPlanPoints(next);
+    if (mine) nameMyLocation(mine, setPlanPoints);
     const place = await reverseGeocode(point);
     if (place) {
       setPlanPoints((pts) =>
@@ -634,11 +738,18 @@ function Ride() {
         <span className="wip-tape">👷🚧 En construcción</span>
         <h1 className="page-title">{ride ? ride.name : "Ride"}</h1>
         <p className="page-subtitle">
-          {ride
-            ? riders.length === 0
-              ? "Nadie en el ride todavía"
-              : `${riders.length} en el ride`
-            : "Ubicación en vivo del grupo"}
+          {ride ? (
+            <>
+              {riders.length === 0 ? "Nadie en el ride todavía" : `${riders.length} en el ride`}
+              {ride.creator && (
+                <span className="ride-creator">
+                  {" · "}⭐ Organiza {ride.created_by === me?.id ? "tú" : ride.creator.apodo || ride.creator.nombre}
+                </span>
+              )}
+            </>
+          ) : (
+            "Ubicación en vivo del grupo"
+          )}
         </p>
       </div>
 
@@ -751,7 +862,9 @@ function Ride() {
 
       {/* Map */}
       <div
-        className={`ride-map-wrap ${planning ? "is-planning" : ""} ${rideMode ? "is-ride-mode" : ""}`}
+        className={`ride-map-wrap ${planning ? "is-planning" : ""} ${rideMode ? "is-ride-mode" : ""} ${
+          joined && !problem && !rideMode ? "has-live" : ""
+        }`}
       >
         <MapContainer
           center={LIMA}
@@ -797,7 +910,15 @@ function Ride() {
                   key={p.id}
                   position={[p.lat, p.lng]}
                   title={p.name}
-                  icon={i === 0 ? START_ICON : i === planPoints.length - 1 ? END_ICON : WAYPOINT_ICON}
+                  icon={
+                    planPoints.length === 1 && !p.mine
+                      ? END_ICON // first place chosen = destination
+                      : i === 0
+                        ? START_ICON
+                        : i === planPoints.length - 1
+                          ? END_ICON
+                          : WAYPOINT_ICON
+                  }
                 />
               ))
             : stops.map((p, i) => (
@@ -828,26 +949,22 @@ function Ride() {
             />
           )}
 
-          {positioned.map((r) => (
-            <Marker
-              key={r.member_id}
-              position={[r.lat, r.lng]}
-              zIndexOffset={r.isMe ? 1000 : ROLE_ORDER[r.role] === 1 ? 0 : 500}
-              icon={riderIcon({
+          <RiderLayer
+            riders={positioned}
+            headingOf={riderHeading}
+            bearing={mapBearing}
+            iconFor={(r) =>
+              riderIcon({
                 apodo: r.member?.apodo || r.member?.nombre,
                 foto: r.member?.foto,
                 role: r.role,
                 stale: r.stale,
                 isMe: r.isMe,
-                heading: r.isMe
-                  ? tracking.heading
-                  : ["fresh", "dim"].includes(r.stale)
-                    ? r.heading
-                    : null,
+                heading: riderHeading(r),
                 bearing: mapBearing,
-              })}
-            />
-          ))}
+              })
+            }
+          />
         </MapContainer>
 
         {/* Problems: banner on top of the map (in ride mode the HUD shows them) */}
@@ -1039,6 +1156,11 @@ function Ride() {
                   <strong>
                     {r.member?.apodo || r.member?.nombre}
                     {r.isMe && " (tú)"}
+                    {r.member_id === ride.created_by && (
+                      <span className="ride-organizer" title="Creó el ride">
+                        ⭐ Organiza
+                      </span>
+                    )}
                   </strong>
                   <span>
                     {ROLES[r.role].icon} {ROLES[r.role].label}

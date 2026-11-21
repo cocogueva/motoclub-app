@@ -16,16 +16,55 @@ export const makePlanPoint = ({ lat, lng, name, detail = "", mine = false }) => 
   mine, // planner's own position: renamed to its street address (see useMyLocation)
 });
 
-// Like a navigation app: the first two points are start and destination; after
-// that a new place is added as a stop just before the destination.
-export const insertPlanPoint = (points, point) =>
-  points.length < 2
-    ? [...points, point]
-    : [...points.slice(0, -1), point, points[points.length - 1]];
+// Like a navigation app ("¿A dónde vamos?"): the first place chosen is the
+// DESTINATION; the start is my location (added automatically) or the next
+// place chosen; after that, new places are stops just before the destination.
+export const insertPlanPoint = (points, point) => {
+  if (points.length === 0) return [point];
+  if (points.length === 1) return points[0].mine ? [points[0], point] : [point, points[0]];
+  return [...points.slice(0, -1), point, points[points.length - 1]];
+};
 
-const pointIcon = (i, total) => (i === 0 ? "🚩" : i === total - 1 ? "🏁" : "📍");
-const pointRole = (i, total) =>
-  i === 0 ? "Salida" : i === total - 1 ? "Destino" : `Parada ${i}`;
+/**
+ * Adds a place to the plan. On an empty plan with GPS available, my location
+ * becomes the start automatically. Returns { next, mine } (mine = the new
+ * my-location point, to be named with nameMyLocation).
+ */
+export function addToPlan(points, point, myPosition) {
+  if (points.length === 0 && myPosition) {
+    const mine = makePlanPoint({ ...myPosition, name: "Mi ubicación", mine: true });
+    return { next: [mine, point], mine };
+  }
+  return { next: insertPlanPoint(points, point), mine: null };
+}
+
+// "Mi ubicación" means something different for every rider, so the point is
+// renamed right away to its address (what the others will see once saved)
+export async function nameMyLocation(point, setPoints) {
+  const place = await reverseGeocode(point);
+  setPoints((pts) =>
+    pts.map((p) =>
+      p.id === point.id
+        ? { ...p, name: place?.name || "Punto de salida", detail: "Tu ubicación al planear" }
+        : p
+    )
+  );
+}
+
+// A lone point is the destination (first place chosen), unless it's my location
+const pointKind = (i, points) =>
+  points.length === 1
+    ? points[0].mine
+      ? "start"
+      : "end"
+    : i === 0
+      ? "start"
+      : i === points.length - 1
+        ? "end"
+        : "stop";
+const KIND_ICON = { start: "🚩", end: "🏁", stop: "📍" };
+const pointRole = (i, points) =>
+  ({ start: "Salida", end: "Destino", stop: `Parada ${i}` })[pointKind(i, points)];
 
 
 // ---------------------------------------------------------------------------
@@ -120,23 +159,18 @@ export default function RoutePlanner({
 }) {
   const total = points.length;
 
-  const addPlace = (place) => onChange(insertPlanPoint(points, makePlanPoint(place)));
+  const addPlace = (place) => {
+    const { next, mine } = addToPlan(points, makePlanPoint(place), myPosition);
+    onChange(next);
+    if (mine) nameMyLocation(mine, onChange);
+  };
 
-  // "Mi ubicación" means something different for every rider, so the point is
-  // renamed right away to its address (what the others will see once saved)
-  const useMyLocation = async () => {
+  const useMyLocation = () => {
     const me = makePlanPoint({ ...myPosition, name: "Mi ubicación", mine: true });
     // replace a previous "my location" start instead of stacking them
     const rest = points[0]?.mine ? points.slice(1) : points;
     onChange([me, ...rest]);
-    const place = await reverseGeocode(me);
-    onChange((pts) =>
-      pts.map((p) =>
-        p.id === me.id
-          ? { ...p, name: place?.name || "Punto de salida", detail: "Tu ubicación al planear" }
-          : p
-      )
-    );
+    nameMyLocation(me, onChange);
   };
 
   // Drag to reorder: grab the ⠿ handle and slide. Pointer events, so it works
@@ -172,12 +206,16 @@ export default function RoutePlanner({
 
   const remove = (i) => onChange(points.filter((_, k) => k !== i));
 
+  const onlyDestination = total === 1 && !points[0].mine;
+  const onlyStart = total === 1 && points[0].mine;
   const hint =
     total === 0
-      ? "Busca un lugar o toca el mapa para marcar la salida 🚩"
-      : total === 1
-        ? "Ahora el destino 🏁: búscalo o tócalo en el mapa"
-        : routing
+      ? "¿A dónde vamos? Busca el destino 🏁 o tócalo en el mapa"
+      : onlyDestination
+        ? "¿Desde dónde salimos? 🚩 Busca, toca el mapa o usa tu ubicación"
+        : onlyStart
+          ? "¿A dónde vamos? Busca el destino 🏁 o tócalo en el mapa"
+          : routing
           ? "Calculando ruta…"
           : routeError
             ? `⚠️ ${routeError}`
@@ -192,15 +230,15 @@ export default function RoutePlanner({
         near={myPosition || points[total - 1]}
         onPick={addPlace}
         placeholder={
-          total === 0
-            ? "Salida: busca un lugar…"
-            : total === 1
-              ? "Destino: ej. Plaza de Armas de Lima"
-              : "Agregar parada antes del destino…"
+          total === 0 || onlyStart
+            ? "¿A dónde vamos?"
+            : onlyDestination
+              ? "¿Desde dónde salimos?"
+              : "Agregar parada…"
         }
       />
 
-      {myPosition && (
+      {myPosition && total > 0 && !points[0].mine && (
         <button type="button" className="route-planner-mine" onClick={useMyLocation}>
           📍 Salir desde mi ubicación
         </button>
@@ -224,9 +262,9 @@ export default function RoutePlanner({
                   ⠿
                 </span>
               )}
-              <span className="route-planner-icon">{pointIcon(i, total)}</span>
+              <span className="route-planner-icon">{KIND_ICON[pointKind(i, points)]}</span>
               <div className="route-planner-name">
-                <small>{pointRole(i, total)}</small>
+                <small>{pointRole(i, points)}</small>
                 <strong>{p.name}</strong>
                 {p.detail && <span>{p.detail}</span>}
               </div>
