@@ -240,6 +240,15 @@
   width: 100%;
 }
 
+/* Tiles still loading show the map's land color, not Leaflet's gray squares */
+.ride-map-wrap .leaflet-container {
+  background: var(--map-land-light);
+}
+
+.ride-map-wrap.map-dark .leaflet-container {
+  background: var(--map-land-dark);
+}
+
 /* Dark map: invert the OSM tiles, rotate hues back so water stays blue */
 .ride-tiles-dark {
   filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
@@ -647,16 +656,12 @@
   box-shadow: var(--shadow-chrome);
 }
 
-/* "● En vivo": top-left corner of the map (the zoom buttons move below it,
-   see .has-live) instead of a status bar when all is well */
-.ride-map-wrap.has-live .leaflet-top.leaflet-left {
-  top: 2.1rem;
-}
-
+/* "● En vivo": next to the zoom buttons (same spot as the problem banner)
+   instead of a status bar when all is well */
 .ride-live {
   position: absolute;
-  top: 0.6rem;
-  left: 10px;
+  top: 0.75rem;
+  left: 3.4rem;
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -726,7 +731,7 @@
   opacity: 0.85;
 }
 
-/* Who created the ride: in the subtitle (always) and as a tag in the riders list */
+/* Who created the ride in the app ("Creado por" in the subtitle, "Creador" tag in the list) */
 .ride-creator {
   white-space: nowrap;
 }

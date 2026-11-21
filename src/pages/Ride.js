@@ -743,7 +743,7 @@ function Ride() {
               {riders.length === 0 ? "Nadie en el ride todavía" : `${riders.length} en el ride`}
               {ride.creator && (
                 <span className="ride-creator">
-                  {" · "}⭐ Organiza {ride.created_by === me?.id ? "tú" : ride.creator.apodo || ride.creator.nombre}
+                  {" · "}Creado por {ride.created_by === me?.id ? "ti" : ride.creator.apodo || ride.creator.nombre}
                 </span>
               )}
             </>
@@ -862,8 +862,8 @@ function Ride() {
 
       {/* Map */}
       <div
-        className={`ride-map-wrap ${planning ? "is-planning" : ""} ${rideMode ? "is-ride-mode" : ""} ${
-          joined && !problem && !rideMode ? "has-live" : ""
+        className={`ride-map-wrap map-${mapTheme.theme} ${planning ? "is-planning" : ""} ${
+          rideMode ? "is-ride-mode" : ""
         }`}
       >
         <MapContainer
@@ -882,6 +882,8 @@ function Ride() {
             attribution={ATTRIBUTION}
             maxZoom={19}
             className={mapTheme.theme === "dark" ? "ride-tiles-dark" : ""}
+            keepBuffer={4} // preload more tiles around the view: less blank squares when panning
+            updateWhenZooming={false} // during a pinch stretch the current tiles, load once at the end
           />
           <FitToRide rideId={ride?.id} points={fitPoints} />
           <PlanClicks enabled={planning} onAdd={addPlanPoint} />
@@ -1157,8 +1159,8 @@ function Ride() {
                     {r.member?.apodo || r.member?.nombre}
                     {r.isMe && " (tú)"}
                     {r.member_id === ride.created_by && (
-                      <span className="ride-organizer" title="Creó el ride">
-                        ⭐ Organiza
+                      <span className="ride-organizer" title="Creó el ride en la app">
+                        Creador
                       </span>
                     )}
                   </strong>
