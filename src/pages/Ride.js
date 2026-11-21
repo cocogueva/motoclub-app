@@ -8,10 +8,34 @@ import {
   useMapEvents,
 } from "react-leaflet";
 import L from "leaflet";
+import "leaflet-rotate"; // adds map rotation (setBearing) for the "Rumbo" mode
 import "leaflet/dist/leaflet.css";
 import { supabase } from "../supabaseClient";
 import useRideTracking from "../hooks/useRideTracking";
-import { fetchRoute, googleMapsLink, isNetworkError, wazeLink } from "../lib/routing";
+import RoutePlanner, { insertPlanPoint, makePlanPoint } from "../components/RoutePlanner";
+import { reverseGeocode } from "../lib/geocoding";
+import {
+  AutoThemeIcon,
+  ExitFullscreenIcon,
+  FullscreenIcon,
+  GoogleMapsIcon,
+  GroupIcon,
+  LocateIcon,
+  MoonIcon,
+  MoreIcon,
+  PencilIcon,
+  NavigationIcon,
+  SunIcon,
+  WazeIcon,
+} from "../components/Icons";
+import {
+  fetchRoute,
+  formatDuration,
+  formatKm,
+  googleMapsLink,
+  isNetworkError,
+  wazeLink,
+} from "../lib/routing";
 import "./Ride.css";
 
 // ---------------------------------------------------------------------------
@@ -29,9 +53,26 @@ const ATTRIBUTION =
 const ROLES = {
   lead: { label: "Cap de Ruta", icon: "🧭" },
   rider: { label: "Rider", icon: "🏍️" },
-  sweep: { label: "Barredor", icon: "🛡️" },
+  sweep: { label: "Colero", icon: "🛡️" },
 };
 const ROLE_ORDER = { lead: 0, rider: 1, sweep: 2 }; // formation: front → back
+
+// Follow button, same cycle as a navigation app's location button:
+// off → north (centered on me) → heading (centered, map turns with me) → off.
+// "heading-free" = dragged the map while in heading: stays rotated, stops
+// centering; tapping goes back to heading.
+const FOLLOW_NEXT = { off: "north", north: "heading", heading: "off", "heading-free": "heading" };
+// Icon + tooltip per follow state (Rumbo = map turns so my direction points up)
+const FOLLOW_UI = {
+  off: { title: "Seguirme", icon: <LocateIcon /> },
+  north: { title: "Siguiéndote (norte arriba). Toca para Rumbo", icon: <LocateIcon active /> },
+  heading: { title: "Rumbo: el mapa gira con tu dirección", icon: <NavigationIcon /> },
+};
+const THEME_UI = {
+  auto: { title: "Tema del mapa: automático", icon: <AutoThemeIcon /> },
+  light: { title: "Tema del mapa: claro", icon: <SunIcon /> },
+  dark: { title: "Tema del mapa: oscuro", icon: <MoonIcon /> },
+};
 
 const STALE_DIM_S = 60; // > 1 min: dimmed
 const STALE_LOST_S = 300; // > 5 min: "sin señal"
@@ -58,17 +99,14 @@ const timeAgo = (age) => {
   return `hace ${Math.round(age / 3600)} h`;
 };
 
-const formatKm = (m) => `${(m / 1000).toFixed(1)} km`;
-const formatDuration = (s) => {
-  const h = Math.floor(s / 3600);
-  const min = Math.round((s % 3600) / 60);
-  return h ? `${h} h ${min} min` : `${min} min`;
-};
 
 // Map marker for a rider: photo (or initial), role badge, apodo label
 const iconCache = new Map();
-function riderIcon({ apodo, foto, role, stale, isMe, preview = false }) {
-  const key = [apodo, foto, role, stale, isMe, preview].join("|");
+// heading = direction of travel (0 = north); bearing = current map rotation.
+// Markers stay upright when the map rotates, so the arrow adds both.
+function riderIcon({ apodo, foto, role, stale, isMe, preview = false, heading = null, bearing = 0 }) {
+  const arrow = heading == null ? null : Math.round(((heading + bearing) % 360) / 5) * 5;
+  const key = [apodo, foto, role, stale, isMe, preview, arrow].join("|");
   if (iconCache.has(key)) return iconCache.get(key);
 
   const avatar = foto
@@ -82,7 +120,11 @@ function riderIcon({ apodo, foto, role, stale, isMe, preview = false }) {
   const icon = L.divIcon({
     className: "rider-marker",
     html: `<div class="${classes}">
-             <div class="rider-pin-avatar">${avatar}${badge}</div>
+             <div class="rider-pin-avatar">${
+               arrow == null
+                 ? ""
+                 : `<div class="rider-pin-heading" style="transform: rotate(${arrow}deg)"></div>`
+             }${avatar}${badge}</div>
              <div class="rider-pin-name">${escapeHtml(apodo)}</div>
            </div>`,
     iconSize: [60, 72],
@@ -164,6 +206,24 @@ function PlanClicks({ enabled, onAdd }) {
   return null;
 }
 
+// Map rotation: "heading" turns the map so my direction of travel points up
+// (like a navigation app), anything else = north up. Reports the bearing so the
+// marker arrows can compensate.
+function RotateMap({ headingUp, heading, onBearing }) {
+  const map = useMap();
+  useEffect(() => {
+    const report = () => onBearing(map.getBearing());
+    map.on("rotate", report);
+    return () => map.off("rotate", report);
+  }, [map, onBearing]);
+  useEffect(() => {
+    const target = headingUp && heading != null ? (360 - heading) % 360 : 0;
+    const diff = Math.abs(((map.getBearing() - target + 540) % 360) - 180);
+    if (diff >= 4) map.setBearing(target); // ignore GPS jitter
+  }, [headingUp, heading, map]);
+  return null;
+}
+
 // "Seguirme": keep my position centered; dragging the map turns it off
 function FollowMe({ enabled, position, onUserMove }) {
   const map = useMap();
@@ -207,12 +267,17 @@ function Ride() {
   const [, setTick] = useState(0);
   const [connLost, setConnLost] = useState(false); // background refresh failed (no signal)
   const [rideMode, setRideMode] = useState(false); // full-screen map while riding
-  const [follow, setFollow] = useState(false);
+  // follow: see FOLLOW_NEXT
+  const [follow, setFollow] = useState("off");
+  const [menuOpen, setMenuOpen] = useState(false); // "⋯" (Terminar ride)
+  const [mapBearing, setMapBearing] = useState(0);
 
   // Route planning
   const [planning, setPlanning] = useState(false);
   const [planPoints, setPlanPoints] = useState([]);
   const [planRoute, setPlanRoute] = useState(null);
+  const [planRouting, setPlanRouting] = useState(false);
+  const [planRouteError, setPlanRouteError] = useState(null);
 
   const mapTheme = useMapTheme();
 
@@ -344,6 +409,15 @@ function Ride() {
 
   const positioned = displayRiders.filter((r) => r.lat != null);
   const offline = connLost || tracking.offline;
+  const problem = offline
+    ? "📵 Sin conexión: reintentando. Tu ubicación se enviará al recuperar señal."
+    : joined && tracking.error
+      ? `⚠️ ${tracking.error}`
+      : joined && !("wakeLock" in navigator)
+        ? "⚠️ Este navegador no mantiene la pantalla encendida: no cambies de app ni bloquees el teléfono."
+        : null;
+  const mySpeedKmh =
+    tracking.position?.speed != null ? Math.round(tracking.position.speed * 3.6) : null;
   const stops = ride?.stops?.length
     ? ride.stops
     : [ride?.start_point, ride?.end_point].filter(Boolean);
@@ -383,20 +457,36 @@ function Ride() {
     setNewRideName("");
   };
 
+  // Joining goes straight to ride mode (closable to see the rest); changing role doesn't
   const join = (role = joinRole) =>
-    run(() => rpc("join_ride", { p_ride_id: ride.id, p_role: role }));
+    run(async () => {
+      await rpc("join_ride", { p_ride_id: ride.id, p_role: role });
+      if (!joined) enterRideMode();
+    });
 
   const leave = () => run(() => rpc("leave_ride", { p_ride_id: ride.id }));
 
   const endRide = () => {
+    setMenuOpen(false);
     if (!window.confirm("¿Terminar el ride para todos?")) return;
     run(() => rpc("end_ride", { p_ride_id: ride.id }), "Ride terminado");
   };
 
+  // "Trazar / Cambiar ruta" starts from the saved route, so a stop can be added to it
   const startPlanning = () => {
-    setPlanning(true);
-    setPlanPoints([]);
+    const saved = ride?.stops?.length
+      ? ride.stops
+      : [ride?.start_point, ride?.end_point].filter(Boolean);
+    setPlanPoints(
+      saved.map((p, i, all) =>
+        makePlanPoint({
+          ...p,
+          name: p.name || (i === 0 ? "Salida" : i === all.length - 1 ? "Destino" : `Parada ${i}`),
+        })
+      )
+    );
     setPlanRoute(null);
+    setPlanning(true);
     setMessage(null);
   };
 
@@ -404,31 +494,81 @@ function Ride() {
     setPlanning(false);
     setPlanPoints([]);
     setPlanRoute(null);
+    setPlanRouteError(null);
   };
 
-  const addPlanPoint = (p) => {
-    setPlanPoints((pts) => [...pts, p]);
-    setPlanRoute(null);
+  // Tap on the map: add the point right away, then name it (reverse lookup)
+  const addPlanPoint = async ({ lat, lng }) => {
+    const point = makePlanPoint({ lat, lng });
+    setPlanPoints((pts) => insertPlanPoint(pts, point));
+    const place = await reverseGeocode(point);
+    if (place) {
+      setPlanPoints((pts) =>
+        pts.map((p) => (p.id === point.id ? { ...p, name: place.name, detail: place.detail } : p))
+      );
+    }
   };
 
-  const undoPlanPoint = () => {
-    setPlanPoints((pts) => pts.slice(0, -1));
-    setPlanRoute(null);
-  };
+  // Road route recalculated whenever the points (positions/order) change
+  const planKey = planPoints.map((p) => `${p.lat},${p.lng}`).join(";");
+  useEffect(() => {
+    if (!planning) return;
+    setPlanRouteError(null);
+    if (planPoints.length < 2) {
+      setPlanRoute(null);
+      return;
+    }
+    let cancelled = false;
+    setPlanRouting(true);
+    const timer = setTimeout(async () => {
+      try {
+        const r = await fetchRoute(planPoints);
+        if (!cancelled) setPlanRoute(r);
+      } catch (e) {
+        if (!cancelled) {
+          setPlanRoute(null);
+          setPlanRouteError(e.message);
+        }
+      } finally {
+        if (!cancelled) setPlanRouting(false);
+      }
+    }, 500);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      setPlanRouting(false);
+    };
+    // planKey covers planPoints' positions; names changing must not re-route
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planning, planKey]);
 
-  const calculateRoute = () =>
-    run(async () => setPlanRoute(await fetchRoute(planPoints)));
+  // A searched place can be far away: bring all plan points into view (only
+  // when one is off screen, so taps on the map don't make it jump)
+  useEffect(() => {
+    if (!planning || !map || planPoints.length === 0) return;
+    const latlngs = planPoints.map((p) => [p.lat, p.lng]);
+    const bounds = map.getBounds();
+    if (latlngs.every((ll) => bounds.contains(ll))) return;
+    if (latlngs.length === 1) map.setView(latlngs[0], 15);
+    else map.fitBounds(latlngs, { padding: [40, 40] });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planning, planKey, map]);
 
   const saveRoute = () =>
     run(async () => {
       await rpc("set_ride_route", {
         p_ride_id: ride.id,
-        p_start: planPoints[0],
-        p_end: planPoints[planPoints.length - 1],
+        p_start: { lat: planPoints[0].lat, lng: planPoints[0].lng },
+        p_end: { lat: planPoints[planPoints.length - 1].lat, lng: planPoints[planPoints.length - 1].lng },
         p_route: planRoute.coords,
         p_distance_m: Math.round(planRoute.distance),
         p_duration_s: Math.round(planRoute.duration),
-        p_stops: planPoints,
+        // "Mi ubicación" would read as each rider's own position: never save it
+        p_stops: planPoints.map(({ lat, lng, name, mine }) => ({
+          lat,
+          lng,
+          name: mine && name === "Mi ubicación" ? "Punto de salida" : name,
+        })),
       });
       cancelPlanning();
     }, "Ruta guardada");
@@ -437,22 +577,24 @@ function Ride() {
     if (map && tracking.position) map.setView([tracking.position.lat, tracking.position.lng], 16);
   };
 
-  const toggleFollow = () => {
-    if (!follow) centerOnMe();
-    setFollow(!follow);
+  const cycleFollow = () => {
+    const next = FOLLOW_NEXT[follow];
+    if (next !== "off") centerOnMe();
+    setFollow(next);
   };
+  const followMode = follow === "heading-free" ? "off" : follow; // for labels
 
   // Ride mode: map full screen, big buttons, follow me on. Real fullscreen where
   // the browser allows it (Android); iPhone just gets the full-viewport overlay.
   const enterRideMode = () => {
     setRideMode(true);
-    setFollow(Boolean(tracking.position));
+    setFollow(tracking.position ? "heading" : "off");
     document.documentElement.requestFullscreen?.().catch(() => {});
   };
 
   const exitRideMode = () => {
     setRideMode(false);
-    setFollow(false);
+    setFollow("off");
     if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
   };
 
@@ -470,6 +612,7 @@ function Ride() {
   }, [ride, rideMode]);
 
   const showEveryone = () => {
+    setFollow("off"); // overview: stop following, back to north up
     const pts = [...(ride?.route || []), ...positioned.map((r) => [r.lat, r.lng])];
     if (!map || pts.length === 0) return;
     if (pts.length === 1) map.setView(pts[0], 15);
@@ -488,18 +631,15 @@ function Ride() {
   return (
     <div className="ride-page">
       <div className="ride-header">
-        <div>
-          <h1 className="page-title">{ride ? ride.name : "Ride"}</h1>
-          <p className="page-subtitle">
-            {ride
-              ? `${riders.length} en el ride` +
-                (ride.route_distance_m
-                  ? ` · ${formatKm(ride.route_distance_m)} · ~${formatDuration(ride.route_duration_s)}`
-                  : "")
-              : "Ubicación en vivo del grupo"}
-          </p>
-        </div>
         <span className="wip-tape">👷🚧 En construcción</span>
+        <h1 className="page-title">{ride ? ride.name : "Ride"}</h1>
+        <p className="page-subtitle">
+          {ride
+            ? riders.length === 0
+              ? "Nadie en el ride todavía"
+              : `${riders.length} en el ride`
+            : "Ubicación en vivo del grupo"}
+        </p>
       </div>
 
       {message && <div className={`message message-${message.type}`}>{message.text}</div>}
@@ -523,144 +663,106 @@ function Ride() {
         </form>
       )}
 
-      {/* Active ride: join / leave / manage */}
+      {/* Route card: stops, km/time, edit (managers), open in a nav app (optional) */}
       {ride && !planning && (
-        <div className="ride-panel ride-actions">
-          {!joined ? (
-            <>
-              <select value={joinRole} onChange={(e) => setJoinRole(e.target.value)}>
-                {Object.entries(ROLES).map(([key, r]) => (
-                  <option key={key} value={key}>
-                    {r.icon} {r.label}
-                  </option>
-                ))}
-              </select>
-              <button className="btn" onClick={() => join()} disabled={busy}>
-                Unirse
-              </button>
-            </>
-          ) : (
-            <>
-              <select
-                value={myRow.role}
-                onChange={(e) => join(e.target.value)}
-                disabled={busy}
-                aria-label="Mi rol"
-              >
-                {Object.entries(ROLES).map(([key, r]) => (
-                  <option key={key} value={key}>
-                    {r.icon} {r.label}
-                  </option>
-                ))}
-              </select>
-              <button className="btn btn-secondary" onClick={leave} disabled={busy}>
-                Salir
-              </button>
-            </>
-          )}
-          {joined && (
-            <button className="btn" onClick={enterRideMode}>
-              ⛶ Modo ride
-            </button>
-          )}
-          {googleUrl && (
-            <a className="btn btn-secondary" href={googleUrl} target="_blank" rel="noopener noreferrer">
-              Google Maps ↗
-            </a>
-          )}
-          {ride.end_point && (
-            <a
-              className="btn btn-secondary"
-              href={wazeLink(ride.end_point)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Waze ↗
-            </a>
-          )}
-          {canManage && (
-            <>
-              <button className="btn btn-secondary" onClick={startPlanning} disabled={busy}>
-                {ride.route ? "Cambiar ruta" : "Trazar ruta"}
-              </button>
-              <button className="btn btn-danger" onClick={endRide} disabled={busy}>
-                Terminar
-              </button>
-            </>
-          )}
+        <div className="ride-route-card">
+          <div className="ride-route-info">
+            {stops.length > 0 ? (
+              <>
+                <p className="ride-stops">
+                  {stops.map((p, i) => (
+                    <span key={i}>
+                      {i === 0 ? "🚩" : i === stops.length - 1 ? "🏁" : "📍"}{" "}
+                      {p.name || (i === 0 ? "Salida" : i === stops.length - 1 ? "Destino" : "Parada")}
+                    </span>
+                  ))}
+                </p>
+                {ride.route_distance_m && (
+                  <p className="ride-route-meta">
+                    {formatKm(ride.route_distance_m)} · ~{formatDuration(ride.route_duration_s)}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="ride-empty">Sin ruta todavía.</p>
+            )}
+          </div>
+
+          <div className="ride-route-tools">
+            {googleUrl && (
+              <>
+                <span className="ride-nav-label">Abrir en</span>
+                <a
+                  className="ride-nav-app"
+                  href={googleUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Navegar con Google Maps (con todas las paradas)"
+                  aria-label="Abrir en Google Maps"
+                >
+                  <GoogleMapsIcon size={20} />
+                </a>
+                <a
+                  className="ride-nav-app"
+                  href={wazeLink(stops[stops.length - 1])}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Navegar con Waze (solo al destino)"
+                  aria-label="Abrir en Waze"
+                >
+                  <WazeIcon size={20} />
+                </a>
+              </>
+            )}
+            {canManage &&
+              (ride.route ? (
+                <button
+                  className="ride-icon-btn"
+                  onClick={startPlanning}
+                  disabled={busy}
+                  title="Modificar ruta"
+                  aria-label="Modificar ruta"
+                >
+                  <PencilIcon size={18} />
+                </button>
+              ) : (
+                <button className="btn btn-secondary ride-small-btn" onClick={startPlanning} disabled={busy}>
+                  <PencilIcon size={16} /> Trazar ruta
+                </button>
+              ))}
+          </div>
         </div>
       )}
 
       {/* Route planning */}
       {planning && (
-        <div className="ride-panel ride-plan">
-          <p className="ride-plan-hint">
-            {planPoints.length === 0
-              ? "Toca el mapa para marcar el punto de partida 🚩"
-              : planPoints.length === 1
-                ? "Ahora toca el destino 🏁 (puedes agregar paradas en orden)"
-                : planRoute
-                  ? `Ruta: ${formatKm(planRoute.distance)} · ~${formatDuration(planRoute.duration)}`
-                  : `${planPoints.length} puntos. Calcula la ruta o sigue agregando paradas.`}
-          </p>
-          <div className="ride-plan-buttons">
-            <button
-              className="btn btn-secondary"
-              onClick={undoPlanPoint}
-              disabled={busy || planPoints.length === 0}
-            >
-              Deshacer
-            </button>
-            {!planRoute ? (
-              <button className="btn" onClick={calculateRoute} disabled={busy || planPoints.length < 2}>
-                Calcular ruta
-              </button>
-            ) : (
-              <button className="btn" onClick={saveRoute} disabled={busy}>
-                Guardar ruta
-              </button>
-            )}
-            <button className="btn btn-secondary" onClick={cancelPlanning} disabled={busy}>
-              Cancelar
-            </button>
-          </div>
-        </div>
-      )}
-
-      {offline && (
-        <div className="ride-status has-error">
-          <span>📵 Sin conexión: reintentando. Tu ubicación se enviará al recuperar señal.</span>
-        </div>
-      )}
-
-      {/* Tracking status */}
-      {joined && !offline && (
-        <div className={`ride-status ${tracking.error ? "has-error" : ""}`}>
-          {tracking.error ? (
-            <span>⚠️ {tracking.error}</span>
-          ) : (
-            <>
-              <span>
-                📡 Compartiendo ubicación
-                {tracking.lastSentAt && ` · enviada ${timeAgo(ageSeconds(tracking.lastSentAt))}`}
-                {tracking.position?.accuracy != null &&
-                  ` · ±${Math.round(tracking.position.accuracy)} m`}
-              </span>
-              <span>
-                {tracking.wakeLock
-                  ? "🔆 Pantalla siempre encendida"
-                  : "⚠️ Mantén la app abierta: si cambias de app tu ubicación se detiene"}
-              </span>
-            </>
-          )}
-        </div>
+        <RoutePlanner
+          points={planPoints}
+          onChange={setPlanPoints}
+          route={planRoute}
+          routing={planRouting}
+          routeError={planRouteError}
+          myPosition={tracking.position}
+          busy={busy}
+          onSave={saveRoute}
+          onCancel={cancelPlanning}
+        />
       )}
 
       {/* Map */}
       <div
         className={`ride-map-wrap ${planning ? "is-planning" : ""} ${rideMode ? "is-ride-mode" : ""}`}
       >
-        <MapContainer center={LIMA} zoom={12} className="ride-map" ref={setMap}>
+        <MapContainer
+          center={LIMA}
+          zoom={12}
+          className="ride-map"
+          ref={setMap}
+          rotate
+          bearing={0}
+          rotateControl={false}
+          touchRotate={false}
+        >
           <TileLayer
             key={mapTheme.theme}
             url={TILE_URL}
@@ -670,7 +772,16 @@ function Ride() {
           />
           <FitToRide rideId={ride?.id} points={fitPoints} />
           <PlanClicks enabled={planning} onAdd={addPlanPoint} />
-          <FollowMe enabled={follow} position={tracking.position} onUserMove={() => setFollow(false)} />
+          <FollowMe
+            enabled={follow === "north" || follow === "heading"}
+            position={tracking.position}
+            onUserMove={() => setFollow((f) => (f === "heading" ? "heading-free" : "off"))}
+          />
+          <RotateMap
+            headingUp={follow === "heading" || follow === "heading-free"}
+            heading={tracking.heading}
+            onBearing={setMapBearing}
+          />
           <InvalidateOnResize trigger={rideMode} />
 
           {routeCoords && (
@@ -683,17 +794,20 @@ function Ride() {
           {planning
             ? planPoints.map((p, i) => (
                 <Marker
-                  key={`plan-${i}`}
+                  key={p.id}
                   position={[p.lat, p.lng]}
+                  title={p.name}
                   icon={i === 0 ? START_ICON : i === planPoints.length - 1 ? END_ICON : WAYPOINT_ICON}
                 />
               ))
-            : ride?.start_point && (
-                <>
-                  <Marker position={[ride.start_point.lat, ride.start_point.lng]} icon={START_ICON} />
-                  <Marker position={[ride.end_point.lat, ride.end_point.lng]} icon={END_ICON} />
-                </>
-              )}
+            : stops.map((p, i) => (
+                <Marker
+                  key={`stop-${i}`}
+                  position={[p.lat, p.lng]}
+                  title={p.name}
+                  icon={i === 0 ? START_ICON : i === stops.length - 1 ? END_ICON : WAYPOINT_ICON}
+                />
+              ))}
 
           {/* Not in the ride yet: my local position ("you are here", not shared) */}
           {!joined && me && tracking.position && (
@@ -708,6 +822,8 @@ function Ride() {
                 stale: "fresh",
                 isMe: true,
                 preview: true,
+                heading: tracking.heading,
+                bearing: mapBearing,
               })}
             />
           )}
@@ -723,18 +839,57 @@ function Ride() {
                 role: r.role,
                 stale: r.stale,
                 isMe: r.isMe,
+                heading: r.isMe
+                  ? tracking.heading
+                  : ["fresh", "dim"].includes(r.stale)
+                    ? r.heading
+                    : null,
+                bearing: mapBearing,
               })}
             />
           ))}
         </MapContainer>
 
+        {/* Problems: banner on top of the map (in ride mode the HUD shows them) */}
+        {problem && !rideMode && (
+          <div className="ride-status has-error ride-map-alert">
+            <span>{problem}</span>
+          </div>
+        )}
+
+        {/* All good: a small pulsing dot instead of a status bar */}
+        {joined && !problem && !rideMode && (
+          <div
+            className="ride-live"
+            title={tracking.lastSentAt ? `Ubicación enviada ${timeAgo(ageSeconds(tracking.lastSentAt))}` : ""}
+          >
+            <span className="ride-live-dot" /> En vivo
+          </div>
+        )}
+
         {!rideMode && (
           <div className="ride-map-controls">
-            <button onClick={mapTheme.cycle} title="Tema del mapa">
-              {{ auto: "🌗 Auto", light: "☀️ Claro", dark: "🌙 Oscuro" }[mapTheme.mode]}
+            <button onClick={enterRideMode} title="Pantalla completa (modo ride)" aria-label="Pantalla completa">
+              <FullscreenIcon />
             </button>
-            {positioned.length > 0 && <button onClick={showEveryone}>👥 Todos</button>}
-            {tracking.position && <button onClick={centerOnMe}>📍 Yo</button>}
+            <button onClick={mapTheme.cycle} title={THEME_UI[mapTheme.mode].title} aria-label={THEME_UI[mapTheme.mode].title}>
+              {THEME_UI[mapTheme.mode].icon}
+            </button>
+            {positioned.length > 0 && (
+              <button onClick={showEveryone} title="Ver a todos" aria-label="Ver a todos">
+                <GroupIcon />
+              </button>
+            )}
+            {tracking.position && (
+              <button
+                onClick={cycleFollow}
+                className={followMode === "off" ? "" : "is-on"}
+                title={FOLLOW_UI[followMode].title}
+                aria-label={FOLLOW_UI[followMode].title}
+              >
+                {FOLLOW_UI[followMode].icon}
+              </button>
+            )}
           </div>
         )}
 
@@ -748,39 +903,121 @@ function Ride() {
                   ? `⚠️ ${tracking.error}`
                   : offline
                     ? "📵 Sin señal, reintentando"
-                    : `📡 ${riders.length} en el ride` +
-                      (tracking.lastSentAt ? ` · enviada ${timeAgo(ageSeconds(tracking.lastSentAt))}` : "")}
+                    : !joined
+                      ? "👀 Solo viendo: únete para compartir tu ubicación"
+                      : `📡 ${riders.length} en el ride` +
+                        (tracking.lastSentAt ? ` · enviada ${timeAgo(ageSeconds(tracking.lastSentAt))}` : "")}
               </span>
             </div>
 
-            {/* Bottom: big buttons (gloves) */}
+            {/* My speed, big enough to read on the handlebar */}
+            {tracking.position && (
+              <div className="ride-speed" aria-label="Tu velocidad">
+                <strong>{mySpeedKmh ?? "–"}</strong>
+                <span>km/h</span>
+              </div>
+            )}
+
+            {/* Bottom: big icon buttons (gloves) */}
             <div className="ride-mode-bar">
-              <button onClick={showEveryone} disabled={positioned.length === 0}>
-                <span>👥</span>Todos
+              <button onClick={showEveryone} disabled={positioned.length === 0} title="Ver a todos" aria-label="Ver a todos">
+                <GroupIcon size={28} />
               </button>
               <button
-                onClick={toggleFollow}
+                onClick={cycleFollow}
                 disabled={!tracking.position}
-                className={follow ? "is-on" : ""}
+                className={followMode === "off" ? "" : "is-on"}
+                title={FOLLOW_UI[followMode].title}
+                aria-label={FOLLOW_UI[followMode].title}
               >
-                <span>📍</span>Seguirme
+                {React.cloneElement(FOLLOW_UI[followMode].icon, { size: 28 })}
               </button>
               {googleUrl && (
-                <a href={googleUrl} target="_blank" rel="noopener noreferrer">
-                  <span>🧭</span>Maps
-                </a>
+                <>
+                  <a
+                    className="is-secondary"
+                    href={googleUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Google Maps"
+                    aria-label="Abrir en Google Maps"
+                  >
+                    <GoogleMapsIcon size={22} />
+                  </a>
+                  <a
+                    className="is-secondary"
+                    href={wazeLink(stops[stops.length - 1])}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Waze"
+                    aria-label="Abrir en Waze"
+                  >
+                    <WazeIcon size={22} />
+                  </a>
+                </>
               )}
-              <button onClick={mapTheme.cycle}>
-                <span>{{ auto: "🌗", light: "☀️", dark: "🌙" }[mapTheme.mode]}</span>
-                {{ auto: "Auto", light: "Claro", dark: "Oscuro" }[mapTheme.mode]}
+              <button onClick={mapTheme.cycle} title={THEME_UI[mapTheme.mode].title} aria-label={THEME_UI[mapTheme.mode].title}>
+                {React.cloneElement(THEME_UI[mapTheme.mode].icon, { size: 28 })}
               </button>
-              <button onClick={exitRideMode}>
-                <span>✕</span>Salir
+              <button onClick={exitRideMode} title="Salir de pantalla completa" aria-label="Salir de pantalla completa">
+                <ExitFullscreenIcon size={28} />
               </button>
             </div>
           </>
         )}
       </div>
+
+      {/* Me in this ride: join (→ ride mode) or role + leave; organizer extras in ⋯ */}
+      {ride && !planning && (
+        <div className="ride-me">
+          <select
+            value={joined ? myRow.role : joinRole}
+            onChange={(e) => (joined ? join(e.target.value) : setJoinRole(e.target.value))}
+            disabled={busy}
+            aria-label="Mi rol"
+          >
+            {Object.entries(ROLES).map(([key, r]) => (
+              <option key={key} value={key}>
+                {r.icon} {r.label}
+              </option>
+            ))}
+          </select>
+          {joined ? (
+            <>
+              <button className="btn" onClick={enterRideMode}>
+                <FullscreenIcon size={16} /> Modo ride
+              </button>
+              <button className="btn btn-secondary" onClick={leave} disabled={busy}>
+                Salir
+              </button>
+            </>
+          ) : (
+            <button className="btn ride-join" onClick={() => join()} disabled={busy}>
+              Unirse
+            </button>
+          )}
+          {canManage && (
+            <div className="ride-menu">
+              <button
+                className="ride-icon-btn"
+                onClick={() => setMenuOpen((o) => !o)}
+                aria-expanded={menuOpen}
+                title="Más opciones"
+                aria-label="Más opciones"
+              >
+                <MoreIcon size={18} />
+              </button>
+              {menuOpen && (
+                <div className="ride-menu-list" role="menu">
+                  <button role="menuitem" className="is-danger" onClick={endRide} disabled={busy}>
+                    Terminar ride para todos
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Riders list (formation order: lead → riders → sweep) */}
       {ride && (

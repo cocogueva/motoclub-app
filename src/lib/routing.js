@@ -1,7 +1,7 @@
 // Road routing for planned ride routes.
 // POC: public OSRM demo server (free, no key, best-effort; not for heavy use).
 // To switch provider (OpenRouteService, GraphHopper...), only change this file:
-// keep the return shape { coords: [[lat, lng], ...], distance (m), duration (s) }.
+// keep the return shape { coords: [[lat, lng], ...], distance (m), duration (s), via }.
 
 const OSRM_URL = "https://router.project-osrm.org/route/v1/driving";
 
@@ -10,7 +10,7 @@ export async function fetchRoute(points) {
 
   // OSRM expects "lng,lat;lng,lat"
   const path = points.map((p) => `${p.lng},${p.lat}`).join(";");
-  const res = await fetch(`${OSRM_URL}/${path}?overview=full&geometries=geojson`);
+  const res = await fetch(`${OSRM_URL}/${path}?overview=full&geometries=geojson&steps=true`);
   if (!res.ok) throw new Error("No se pudo calcular la ruta");
 
   const data = await res.json();
@@ -21,7 +21,33 @@ export async function fetchRoute(points) {
     coords: route.geometry.coordinates.map(([lng, lat]) => [lat, lng]),
     distance: route.distance,
     duration: route.duration,
+    via: mainRoads(route),
   };
+}
+
+// "Carretera Panamericana Sur, Vía Expresa Sur": the 2 roads with the most km
+function mainRoads(route) {
+  const km = {};
+  for (const leg of route.legs || []) {
+    for (const step of leg.steps || []) {
+      const name = step.name || step.ref;
+      if (name) km[name] = (km[name] || 0) + step.distance;
+    }
+  }
+  return Object.entries(km)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(([name]) => name)
+    .join(", ");
+}
+
+// Non-breaking spaces so "41 min" never splits across lines
+const NBSP = "\u00a0";
+export const formatKm = (m) => `${(m / 1000).toFixed(1)}${NBSP}km`;
+export function formatDuration(s) {
+  const h = Math.floor(s / 3600);
+  const min = Math.round((s % 3600) / 60);
+  return h ? `${h}${NBSP}h ${min}${NBSP}min` : `${min}${NBSP}min`;
 }
 
 // Deep link to navigate with Waze (voice turn-by-turn) to a point
@@ -57,6 +83,17 @@ export function isNetworkError(err) {
   return /failed to fetch|networkerror|load failed|network request failed/i.test(
     err?.message || ""
   );
+}
+
+// Compass bearing in degrees (0 = north, 90 = east) going from a to b
+export function bearingDegrees(a, b) {
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLng = toRad(b.lng - a.lng);
+  const y = Math.sin(dLng) * Math.cos(toRad(b.lat));
+  const x =
+    Math.cos(toRad(a.lat)) * Math.sin(toRad(b.lat)) -
+    Math.sin(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.cos(dLng);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
 }
 
 // Distance in meters between two {lat, lng} points (haversine)

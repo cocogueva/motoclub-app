@@ -219,7 +219,7 @@
 
 .filter-chip.reset {
   background: var(--color-primary);
-  color: var(--color-asphalt);
+  color: var(--color-on-primary);
   border-color: var(--color-primary);
 }
 

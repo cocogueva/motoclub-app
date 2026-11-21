@@ -5,14 +5,16 @@
 }
 
 .ride-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
-/* Panels (create / actions / planning) */
+.ride-header .wip-tape {
+  font-size: 0.563rem;
+  padding: 5px 7px;
+  margin-bottom: 0.6rem;
+}
+
+/* Panels (create / planning) */
 .ride-panel {
   background: var(--color-chrome);
   border: 2px solid var(--color-steel);
@@ -31,7 +33,6 @@
   margin-top: 0.75rem;
 }
 
-.ride-actions,
 .ride-plan-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -39,14 +40,152 @@
   align-items: center;
 }
 
-.ride-actions select {
+.ride-page .btn {
+  padding: 0.75rem 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.ride-page .btn.ride-small-btn {
+  padding: 0.5rem 0.8rem;
+  font-size: 0.75rem;
+}
+
+/* Square icon button (edit route, ⋯ menu) */
+.ride-icon-btn {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--color-chrome);
+  border: 1px solid var(--color-steel);
+  color: var(--color-fog);
+  cursor: pointer;
+}
+
+.ride-icon-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+/* Route card: stops + km/time, then quiet "open in" links and edit */
+.ride-route-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  background: var(--color-chrome);
+  border: 2px solid var(--color-steel);
+  border-bottom: none;
+  padding: 0.75rem 1rem;
+}
+
+.ride-route-info {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.ride-route-meta {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-exhaust);
+}
+
+.ride-route-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ride-nav-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--color-exhaust);
+  margin-right: 0.15rem;
+}
+
+/* Google Maps / Waze: options, not main actions */
+.ride-nav-app {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  opacity: 0.8;
+  transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.ride-nav-app:hover {
+  opacity: 1;
+  background: var(--color-steel);
+}
+
+.ride-route-tools .ride-icon-btn {
+  margin-left: 0.4rem;
+}
+
+/* Me in the ride: role + join / ride mode / leave + ⋯ */
+.ride-me {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+}
+
+.ride-me select {
   width: auto;
-  min-width: 170px;
+  min-width: 150px;
   padding: 0.7rem 0.75rem;
 }
 
-.ride-page .btn {
-  padding: 0.75rem 1.25rem;
+.ride-join {
+  flex: 1;
+}
+
+.ride-menu {
+  position: relative;
+  margin-left: auto;
+}
+
+.ride-menu-list {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.4rem);
+  z-index: 10;
+  min-width: 220px;
+  background: var(--color-chrome);
+  border: 1px solid var(--color-steel);
+  box-shadow: var(--shadow-chrome);
+}
+
+.ride-menu-list button {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--color-white);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+}
+
+.ride-menu-list button:hover {
+  background: var(--color-steel);
+}
+
+.ride-menu-list .is-danger {
+  color: var(--color-danger);
 }
 
 .ride-plan-hint {
@@ -122,13 +261,15 @@
 }
 
 .ride-map-controls button {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--color-chrome);
   color: var(--color-white);
   border: 1px solid var(--color-steel);
-  padding: 0.45rem 0.7rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  font-family: var(--font-body);
+  border-radius: 8px;
   cursor: pointer;
   box-shadow: var(--shadow-chrome);
 }
@@ -314,7 +455,7 @@
     flex-direction: column;
   }
 
-  .ride-actions select {
+  .ride-me select {
     flex: 1 1 100%;
   }
 
@@ -388,29 +529,16 @@
 .ride-mode-bar button,
 .ride-mode-bar a {
   flex: 1;
-  min-height: 64px;
+  min-height: 60px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.15rem;
   background: var(--color-chrome);
   color: var(--color-white);
   border: 2px solid var(--color-steel);
   border-radius: 10px;
-  font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  text-decoration: none;
   cursor: pointer;
   box-shadow: var(--shadow-chrome);
-}
-
-.ride-mode-bar span {
-  font-size: 1.4rem;
-  line-height: 1;
 }
 
 .ride-mode-bar .is-on {
@@ -428,3 +556,133 @@
   border-style: dashed;
   box-shadow: 0 0 0 4px rgba(var(--color-info-rgb), 0.3), var(--shadow-pin);
 }
+
+/* Direction of travel: a triangle just outside the avatar ring, rotated by
+   heading + map bearing (set inline). Mine is blue, others use their ring color. */
+.rider-pin-heading {
+  position: absolute;
+  inset: -13px;
+  pointer-events: none;
+}
+
+.rider-pin-heading::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 11px solid var(--ring);
+  filter: drop-shadow(var(--shadow-pin));
+}
+
+.rider-pin.is-me .rider-pin-heading::before {
+  border-bottom-color: var(--color-info);
+}
+
+.ride-map-controls button.is-on {
+  border-color: var(--color-info);
+  background: rgba(var(--color-info-rgb), 0.25);
+}
+
+/* Saved route as a line of named stops: 🚩 A → 📍 B → 🏁 C */
+.ride-stops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  font-size: 0.813rem;
+  color: var(--color-fog);
+}
+
+.ride-stops span + span::before {
+  content: "→ ";
+  color: var(--color-exhaust);
+}
+
+/* Problem banner floating on top of the map (between zoom and map buttons) */
+.ride-map-alert {
+  position: absolute;
+  top: 0.6rem;
+  left: 3.4rem;
+  right: 3.9rem;
+  z-index: 1000;
+  margin: 0;
+  background: rgba(var(--color-chrome-rgb), 0.94);
+  box-shadow: var(--shadow-chrome);
+}
+
+/* "● En vivo": shown on the map instead of a status bar when all is well */
+.ride-live {
+  position: absolute;
+  top: 5.2rem; /* under the Leaflet zoom buttons */
+  left: 10px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  background: rgba(var(--color-chrome-rgb), 0.9);
+  border: 1px solid rgba(var(--color-success-rgb), 0.5);
+  border-radius: 999px;
+  font-size: 0.688rem;
+  font-weight: 700;
+  color: var(--color-success);
+  box-shadow: var(--shadow-chrome);
+}
+
+.ride-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-success);
+  animation: rideLivePulse 1.6s ease-out infinite;
+}
+
+@keyframes rideLivePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(var(--color-success-rgb), 0.7);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(var(--color-success-rgb), 0);
+  }
+}
+
+/* Ride mode: my speed, bottom-left above the button bar */
+.ride-speed {
+  position: absolute;
+  left: 0.6rem;
+  bottom: calc(60px + 1.2rem + env(safe-area-inset-bottom));
+  z-index: 1000;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--color-chrome-rgb), 0.92);
+  border: 3px solid var(--color-steel);
+  box-shadow: var(--shadow-chrome);
+}
+
+.ride-speed strong {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  line-height: 1;
+  letter-spacing: 1px;
+  color: var(--color-white);
+}
+
+.ride-speed span {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--color-exhaust);
+}
+
+/* Google Maps / Waze in the ride mode bar: smaller, they're options */
+.ride-mode-bar .is-secondary {
+  flex: 0 0 44px;
+  opacity: 0.85;
+}
+

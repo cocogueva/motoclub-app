@@ -94,7 +94,7 @@
 
 .photo-upload-btn {
   background: var(--color-primary);
-  color: var(--color-asphalt);
+  color: var(--color-on-primary);
   padding: 0.5rem 1rem;
   font-size: 0.813rem;
   font-weight: 700;

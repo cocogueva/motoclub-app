@@ -17,6 +17,7 @@
   --color-primary-rgb: 232, 220, 197; /* Bone - main accent */
   --color-primary: rgb(var(--color-primary-rgb));
   --color-primary-hover: #f5efe0; /* Lighter bone for hover */
+  --color-on-primary: var(--color-asphalt); /* text on a primary (bone) background */
 
   /* Surfaces & text (dark theme) */
   --color-asphalt-rgb: 10, 10, 10;
